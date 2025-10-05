@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FROZEN - Sistema de Gestión</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <h1 class="logo">FROZEN</h1>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <span class="byline">BY 5HERTZ</span>
+    </header>
+    
+    <nav>
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="#"><i class="fas fa-home"></i> Inicio</a></li>
+            <li><a href="#"><i class="fas fa-box"></i> Productos</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Clientes</a></li>
+            <li><a href="#"><i class="fas fa-shopping-cart"></i> Pedidos</a></li>
+            <li><a href="#"><i class="fas fa-chart-bar"></i> Reportes</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <div class="dashboard">
+            <div class="card">
+                <h3>Venta de Artículos</h3>
+                <p>Ventas totales del mes actual</p>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">$24,580</div>
+                        <div class="stat-label">Ingresos</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Pedidos</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Inventario/ Control de Stock</h3>
+                <p>Productos con stock bajo</p>
+                <ul>
+                    <li>Frutillas congeladas - 15 unidades</li>
+                    <li>Espinacas congeladas - 22 unidades</li>
+                    <li>Arándanos congelados - 18 unidades</li>
+                </ul>
+                <button style="margin-top: 1rem;">Ver Inventario Completo</button>
+            </div>
+            
+            <div class="card">
+                <h3>Pedidos Pendientes</h3>
+                <p>Pedidos que requieren atención</p>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Por preparar</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Por enviar</div>
+                    </div>
+                </div>
+                <button style="margin-top: 1rem;">Gestionar Pedidos</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Productos Populares</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Ventas</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Frutillas congeladas</td>
+                        <td>Frutas</td>
+                        <td>245 unidades</td>
+                        <td>156 unidades</td>
+                    </tr>
+                    <tr>
+                        <td>Espinacas congeladas</td>
+                        <td>Hortalizas</td>
+                        <td>189 unidades</td>
+                        <td>78 unidades</td>
+                    </tr>
+                    <tr>
+                        <td>Mix de berries</td>
+                        <td>Frutas</td>
+                        <td>167 unidades</td>
+                        <td>92 unidades</td>
+                    </tr>
+                    <tr>
+                        <td>Zanahorias baby</td>
+                        <td>Hortalizas</td>
+                        <td>134 unidades</td>
+                        <td>115 unidades</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card" style="margin-top: 1.5rem;">
+            <h3>Agregar Nuevo Producto</h3>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Nombre del Producto</label>
+                    <input type="text" id="productName" placeholder="Ej: Arándanos congelados">
+                </div>
+                
+                <div class="form-group">
+                    <label for="productCategory">Categoría</label>
+                    <select id="productCategory">
+                        <option value="">Seleccione una categoría</option>
+                        <option value="frutas">Frutas</option>
+                        <option value="hortalizas">Hortalizas</option>
+                        <option value="mezclas">Mezclas</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productPrice">Precio ($)</label>
+                    <input type="number" id="productPrice" step="0.01" placeholder="0.00">
+                </div>
+                
+                <div class="form-group">
+                    <label for="productStock">Stock Inicial</label>
+                    <input type="number" id="productStock" placeholder="0">
+                </div>
+                
+                <button type="submit">Agregar Producto</button>
+            </form>
+        </div>
+    </div>
+    
+    <footer>
+        <p>FROZEN - Sistema de Gestión &copy; 2025 | BY 5HERTZ</p>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>
