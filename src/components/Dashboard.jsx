@@ -33,7 +33,7 @@ const Dashboard = () => {
           </div>
           <div className="stat">
             <div className="stat-value">{stats.orders}</div>
-            <div className="stat-label">Pedidos</div>
+            <div className="stat-label">Ordenes</div>
           </div>
         </div>
       </div>
@@ -50,8 +50,8 @@ const Dashboard = () => {
       </div>
       
       <div className="card">
-        <h3>Pedidos Pendientes</h3>
-        <p>Pedidos que requieren atención</p>
+        <h3>Ordenes Pendientes</h3>
+        <p>Ordenes que requieren atención</p>
         <div className="stats">
           <div className="stat">
             <div className="stat-value">{stats.toPrepare}</div>
@@ -59,10 +59,10 @@ const Dashboard = () => {
           </div>
           <div className="stat">
             <div className="stat-value">{stats.toSend}</div>
-            <div className="stat-label">Por enviar</div>
+            <div className="stat-label">Pendientes de envio</div>
           </div>
         </div>
-        <button style={{marginTop: '1rem'}}>Gestionar Pedidos</button>
+        <button style={{marginTop: '1rem'}}>Gestionar Ordenes</button>
       </div>
     </div>
   );
