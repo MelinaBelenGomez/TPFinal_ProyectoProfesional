@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const Header = () => {
+const Header = ({ onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -12,9 +12,14 @@ const Header = () => {
       <header className="header">
         <div className="logo-container">
           <h1 className="logo">FROZEN</h1>
-          <button className="menu-toggle" onClick={toggleMenu}>
-            <i className="fas fa-bars"></i>
-          </button>
+          <div className="header-actions">
+            <button className="logout-btn" onClick={onLogout}>
+              <i className="fas fa-sign-out-alt"></i> Salir
+            </button>
+            <button className="menu-toggle" onClick={toggleMenu}>
+              <i className="fas fa-bars"></i>
+            </button>
+          </div>
         </div>
         <span className="byline">BY 5HERTZ</span>
       </header>
