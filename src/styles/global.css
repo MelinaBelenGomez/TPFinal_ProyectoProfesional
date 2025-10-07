@@ -1,9 +1,13 @@
-/* Reset y estilos base */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+    width: 100%;
+    min-width: 100vw;
 }
 
 body {
@@ -12,13 +16,19 @@ body {
     line-height: 1.6;
 }
 
-/* Header y navegación */
-header {
+#root {
+    width: 100%;
+    min-width: 100vw;
+}
+
+.header {
     background: linear-gradient(135deg, #5338b3, #10003de7);
     color: white;
-    padding: 1rem 2rem;
+    padding: 1.5rem 2rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     position: relative;
+    width: 100vw;
+    min-width: 100vw;
 }
 
 .logo-container {
@@ -42,9 +52,11 @@ header {
     opacity: 0.8;
 }
 
-nav {
+.nav {
     background-color: #00146bab;
-    padding: 0.8rem 2rem;
+    padding: 1rem 2rem;
+    width: 100vw;
+    min-width: 100vw;
 }
 
 .nav-menu {
@@ -73,17 +85,17 @@ nav {
     cursor: pointer;
 }
 
-/* Contenido principal */
 .container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+    margin: 2rem 0;
+    padding: 0 2rem;
+    width: 100vw;
+    min-width: 100vw;
 }
 
 .dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
     margin-bottom: 2rem;
 }
 
@@ -128,7 +140,6 @@ nav {
     color: #666;
 }
 
-/* Tablas */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -151,7 +162,6 @@ tr:hover {
     background-color: #f9f9f9;
 }
 
-/* Formularios */
 .form-group {
     margin-bottom: 1.2rem;
 }
@@ -186,16 +196,16 @@ button:hover {
     background-color: #020136c7;
 }
 
-/* Footer */
-footer {
+.footer {
     background-color: #00013594;
     color: white;
     text-align: center;
     padding: 1.5rem;
     margin-top: 2rem;
+    width: 100vw;
+    min-width: 100vw;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .logo {
         font-size: 2rem;
@@ -223,6 +233,10 @@ footer {
     
     .dashboard {
         grid-template-columns: 1fr;
+    }
+    
+    .container {
+        padding: 0 1rem;
     }
     
     .byline {
