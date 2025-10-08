@@ -18,9 +18,11 @@ const Login = ({ onLogin }) => {
     
     if (formData.username && formData.password) {
       if (formData.username === 'admin' && formData.password === 'frozen2025') {
-        onLogin(true);
+        onLogin({ isAuthenticated: true, role: 'admin', username: 'admin' });
+      } else if (formData.username === 'empleado' && formData.password === 'emp2025') {
+        onLogin({ isAuthenticated: true, role: 'employee', username: 'empleado' });
       } else {
-        alert('Credenciales incorrectas. Usa: admin / frozen2025');
+        alert('Credenciales incorrectas. Usa: admin/frozen2025 o empleado/emp2025');
       }
     } else {
       alert('Por favor complete todos los campos.');
@@ -73,7 +75,8 @@ const Login = ({ onLogin }) => {
         </form>
         
         <div className="login-info">
-          <p><strong>Demo:</strong> admin / frozen2025</p>
+          <p><strong>Admin:</strong> admin / frozen2025</p>
+          <p><strong>Empleado:</strong> empleado / emp2025</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Header from './components/Header'
 import Dashboard from './components/Dashboard'
+import EmployeeDashboard from './components/EmployeeDashboard'
 import ProductsTable from './components/ProductsTable'
 import ProductForm from './components/ProductForm'
 import Footer from './components/Footer'
@@ -8,27 +9,33 @@ import Login from './pages/Login'
 import './styles/global.css'
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState(null)
 
-  const handleLogin = (success) => {
-    setIsAuthenticated(success)
+  const handleLogin = (userData) => {
+    setUser(userData)
   }
 
   const handleLogout = () => {
-    setIsAuthenticated(false)
+    setUser(null)
   }
 
-  if (!isAuthenticated) {
+  if (!user?.isAuthenticated) {
     return <Login onLogin={handleLogin} />
   }
 
   return (
     <>
-      <Header onLogout={handleLogout} />
+      <Header onLogout={handleLogout} user={user} />
       <div className="container">
-        <Dashboard />
-        <ProductsTable />
-        <ProductForm />
+        {user.role === 'admin' ? (
+          <>
+            <Dashboard />
+            <ProductsTable />
+            <ProductForm />
+          </>
+        ) : (
+          <EmployeeDashboard user={user} />
+        )}
       </div>
       <Footer />
     </>

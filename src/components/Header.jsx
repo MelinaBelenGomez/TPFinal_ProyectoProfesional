@@ -1,10 +1,28 @@
 import { useState } from 'react';
 
-const Header = ({ onLogout }) => {
+const Header = ({ onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
+  };
+
+  const getMenuItems = () => {
+    if (user?.role === 'admin') {
+      return [
+        { icon: 'fas fa-home', text: 'Inicio', href: '#' },
+        { icon: 'fas fa-box', text: 'Productos', href: '#' },
+        { icon: 'fas fa-users', text: 'Clientes', href: '#' },
+        { icon: 'fas fa-shopping-cart', text: 'Pedidos', href: '#' },
+        { icon: 'fas fa-chart-bar', text: 'Reportes', href: '#' },
+        { icon: 'fas fa-cog', text: 'Configuración', href: '#' }
+      ];
+    } else {
+      return [
+        { icon: 'fas fa-clock', text: 'Registro de Horarios', href: '#' },
+        { icon: 'fas fa-chart-line', text: 'Mis Reportes', href: '#' }
+      ];
+    }
   };
 
   return (
@@ -26,12 +44,13 @@ const Header = ({ onLogout }) => {
       
       <nav className="nav">
         <ul className={`nav-menu ${menuOpen ? 'active' : ''}`}>
-          <li><a href="#"><i className="fas fa-home"></i> Inicio</a></li>
-          <li><a href="#"><i className="fas fa-box"></i> Productos</a></li>
-          <li><a href="#"><i className="fas fa-users"></i> Clientes</a></li>
-          <li><a href="#"><i className="fas fa-shopping-cart"></i> Pedidos</a></li>
-          <li><a href="#"><i className="fas fa-chart-bar"></i> Reportes</a></li>
-          <li><a href="#"><i className="fas fa-cog"></i> Configuración</a></li>
+          {getMenuItems().map((item, index) => (
+            <li key={index}>
+              <a href={item.href}>
+                <i className={item.icon}></i> {item.text}
+              </a>
+            </li>
+          ))}
         </ul>
       </nav>
     </>
