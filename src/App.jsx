@@ -6,36 +6,59 @@ import ProductsTable from './components/ProductsTable'
 import ProductForm from './components/ProductForm'
 import Footer from './components/Footer'
 import Login from './pages/Login'
+import Reports from './pages/Reports'
+import Orders from './pages/Orders'
 import './styles/global.css'
 
 function App() {
   const [user, setUser] = useState(null)
+  const [currentPage, setCurrentPage] = useState('dashboard')
 
   const handleLogin = (userData) => {
     setUser(userData)
+    setCurrentPage('dashboard')
   }
 
   const handleLogout = () => {
     setUser(null)
+    setCurrentPage('dashboard')
+  }
+
+  const handleNavigation = (page) => {
+    setCurrentPage(page)
   }
 
   if (!user?.isAuthenticated) {
     return <Login onLogin={handleLogin} />
   }
 
+  const renderContent = () => {
+    if (currentPage === 'reports') {
+      return <Reports />;
+    }
+    
+    if (currentPage === 'orders') {
+      return <Orders />;
+    }
+    
+    if (user.role === 'admin') {
+      return (
+        <>
+          <Dashboard />
+          <ProductsTable />
+          <ProductForm />
+        </>
+      );
+    } else {
+      return <EmployeeDashboard user={user} />;
+    }
+  };
+
   return (
     <>
-      <Header onLogout={handleLogout} user={user} />
+      <Header onLogout={handleLogout} user={user} onNavigate={handleNavigation} currentPage={currentPage} />
       <div className="container">
-        {user.role === 'admin' ? (
-          <>
-            <Dashboard />
-            <ProductsTable />
-            <ProductForm />
-          </>
-        ) : (
-          <EmployeeDashboard user={user} />
-        )}
+        {renderContent()}
       </div>
       <Footer />
     </>
