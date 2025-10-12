@@ -8,6 +8,7 @@ import Footer from './components/Footer'
 import Login from './pages/Login'
 import Reports from './pages/Reports'
 import Orders from './pages/Orders'
+import Products from './pages/Products'
 import './styles/global.css'
 
 function App() {
@@ -39,6 +40,10 @@ function App() {
     
     if (currentPage === 'orders') {
       return <Orders />;
+    }
+    
+    if (currentPage === 'products') {
+      return <Products />;
     }
     
     if (user.role === 'admin') {
