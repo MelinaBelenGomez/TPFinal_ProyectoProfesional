@@ -1,32 +1,32 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-const Header = ({ onLogout, user, onNavigate, currentPage }) => {
+const Header = ({ onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
-  const handleNavClick = (page, e) => {
-    e.preventDefault();
-    onNavigate(page);
+  const handleLinkClick = () => {
     setMenuOpen(false);
   };
 
   const getMenuItems = () => {
     if (user?.role === 'admin') {
       return [
-        { icon: 'fas fa-home', text: 'Inicio', page: 'dashboard' },
-        { icon: 'fas fa-box', text: 'Productos', page: 'products' },
-        { icon: 'fas fa-users', text: 'Clientes', page: 'clients' },
-        { icon: 'fas fa-shopping-cart', text: 'Pedidos', page: 'orders' },
-        { icon: 'fas fa-chart-bar', text: 'Reportes', page: 'reports' },
-        { icon: 'fas fa-cog', text: 'Configuración', page: 'settings' }
+        { icon: 'fas fa-home', text: 'Inicio', path: '/' },
+        { icon: 'fas fa-box', text: 'Productos', path: '/products' },
+        { icon: 'fas fa-users', text: 'Clientes', path: '/clients' },
+        { icon: 'fas fa-shopping-cart', text: 'Pedidos', path: '/orders' },
+        { icon: 'fas fa-chart-bar', text: 'Reportes', path: '/reports' },
+        { icon: 'fas fa-cog', text: 'Configuración', path: '/settings' }
       ];
     } else {
       return [
-        { icon: 'fas fa-clock', text: 'Registro de Horarios', page: 'dashboard' },
-        { icon: 'fas fa-chart-line', text: 'Mis Reportes', page: 'reports' }
+        { icon: 'fas fa-clock', text: 'Registro de Horarios', path: '/' },
+        { icon: 'fas fa-chart-line', text: 'Mis Reportes', path: '/reports' }
       ];
     }
   };
@@ -52,13 +52,13 @@ const Header = ({ onLogout, user, onNavigate, currentPage }) => {
         <ul className={`nav-menu ${menuOpen ? 'active' : ''}`}>
           {getMenuItems().map((item, index) => (
             <li key={index}>
-              <a 
-                href="#" 
-                onClick={(e) => handleNavClick(item.page, e)}
-                className={currentPage === item.page ? 'active' : ''}
+              <Link 
+                to={item.path}
+                onClick={handleLinkClick}
+                className={location.pathname === item.path ? 'active' : ''}
               >
                 <i className={item.icon}></i> {item.text}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
