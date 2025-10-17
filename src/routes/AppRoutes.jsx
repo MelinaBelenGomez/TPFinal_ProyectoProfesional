@@ -20,7 +20,7 @@ const AppRoutes = ({ user }) => {
         } />
         <Route path="/reports" element={<Reports />} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/production" element={<Production />} />
+        <Route path="/production" element={<Production user={user} />} />
         <Route path="/products" element={<div>Página de Productos</div>} />
         <Route path="/clients" element={<div>Página de Clientes</div>} />
         <Route path="/settings" element={<div>Página de Configuración</div>} />

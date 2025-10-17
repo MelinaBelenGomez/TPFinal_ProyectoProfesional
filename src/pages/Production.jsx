@@ -1,138 +1,101 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import ProductionService from '../services/productionService';
 
-const Production = () => {
+const Production = ({ user }) => {
   const [productionOrders, setProductionOrders] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const productTypes = [
-    {
-      id: 'mix-berries',
-      name: 'Mix de Berries',
-      description: 'Arándanos, frutillas, moras',
-      icon: 'fas fa-seedling',
-      color: '#8e44ad',
-      ingredients: [
-        { name: 'Arándanos', percentage: 40 },
-        { name: 'Frutillas', percentage: 35 },
-        { name: 'Moras', percentage: 25 }
-      ]
-    },
-    {
-      id: 'mix-tropical',
-      name: 'Mix Tropical',
-      description: 'Mango, maracuyá, kiwi',
-      icon: 'fas fa-leaf',
-      color: '#f39c12',
-      ingredients: [
-        { name: 'Mango', percentage: 50 },
-        { name: 'Maracuyá', percentage: 30 },
-        { name: 'Kiwi', percentage: 20 }
-      ]
-    },
-    {
-      id: 'pulpa-berries',
-      name: 'Pulpa Mix Berries',
-      description: 'Pulpa congelada de berries',
-      icon: 'fas fa-blender',
-      color: '#e74c3c',
-      ingredients: [
-        { name: 'Mix de Berries', percentage: 100 }
-      ]
-    },
-    {
-      id: 'pulpa-tropical',
-      name: 'Pulpa Tropical',
-      description: 'Pulpa congelada tropical',
-      icon: 'fas fa-blender',
-      color: '#f1c40f',
-      ingredients: [
-        { name: 'Mix Tropical', percentage: 100 }
-      ]
-    },
-    {
-      id: 'mezcla-huerta',
-      name: 'Mezcla de Huerta',
-      description: 'Brócoli, repollo, coliflor',
-      icon: 'fas fa-carrot',
-      color: '#27ae60',
-      ingredients: [
-        { name: 'Brócoli', percentage: 35 },
-        { name: 'Repollo', percentage: 35 },
-        { name: 'Coliflor', percentage: 30 }
-      ]
-    },
-    {
-      id: 'combo-sopa',
-      name: 'Combo para Sopa',
-      description: 'Zapallo, cebolla, zanahoria, choclo, papa',
-      icon: 'fas fa-soup',
-      color: '#d35400',
-      ingredients: [
-        { name: 'Zapallo', percentage: 25 },
-        { name: 'Cebolla', percentage: 15 },
-        { name: 'Zanahoria', percentage: 20 },
-        { name: 'Choclo', percentage: 20 },
-        { name: 'Papa', percentage: 20 }
-      ]
-    }
-  ];
+  // Cargar productos desde el service
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [orderForm, setOrderForm] = useState({
-    quantity: '',
-    priority: 'normal',
-    notes: ''
-  });
-
-  const handleCreateOrder = (product) => {
-    setSelectedProduct(product);
-    setOrderForm({ quantity: '', priority: 'normal', notes: '' });
-  };
-
-  const handleFormChange = (e) => {
-    setOrderForm({
-      ...orderForm,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmitOrder = (e) => {
-    e.preventDefault();
-    
-    if (!orderForm.quantity) {
-      alert('Por favor ingrese la cantidad a producir');
-      return;
-    }
-
-    const newOrder = {
-      id: `OP-${Date.now()}`,
-      product: selectedProduct,
-      quantity: parseFloat(orderForm.quantity),
-      priority: orderForm.priority,
-      notes: orderForm.notes,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      currentStage: 'lavado',
-      stages: {
-        lavado: { completed: false, employee: null, completedAt: null },
-        clasificacion: { completed: false, employee: null, completedAt: null },
-        pelado: { completed: false, employee: null, completedAt: null },
-        escurrido: { completed: false, employee: null, completedAt: null },
-        congelacion: { completed: false, employee: null, completedAt: null },
-        empaquetado: { completed: false, employee: null, completedAt: null }
+  const loadProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await ProductionService.getAvailableProducts();
+      if (response.success) {
+        // Mapear productos del backend con iconos y colores para UI
+        const productsWithUI = response.data.map(product => ({
+          ...product,
+          name: product.nombre,
+          description: product.descripcion,
+          cantidadFija: product.cantidad_por_lote,
+          unidadMedida: product.unidad_medida,
+          // Iconos y colores para UI
+          icon: getProductIcon(product.sku),
+          color: getProductColor(product.sku)
+        }));
+        setProducts(productsWithUI);
       }
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getProductIcon = (sku) => {
+    const iconMap = {
+      'FRZ-MIX-BER-001': 'fas fa-seedling',
+      'FRZ-MIX-TRP-002': 'fas fa-leaf',
+      'FRZ-PLP-BER-003': 'fas fa-blender',
+      'FRZ-PLP-TRP-004': 'fas fa-blender',
+      'FRZ-HRT-MIX-005': 'fas fa-carrot',
+      'FRZ-SOP-CMB-006': 'fas fa-soup'
     };
-
-    setProductionOrders([...productionOrders, newOrder]);
-    setSelectedProduct(null);
-    alert(`Orden de producción creada: ${newOrder.id}`);
+    return iconMap[sku] || 'fas fa-box';
   };
 
-  const calculateIngredients = (product, quantity) => {
-    return product.ingredients.map(ingredient => ({
-      ...ingredient,
-      amount: (quantity * ingredient.percentage / 100).toFixed(2)
-    }));
+  const getProductColor = (sku) => {
+    const colorMap = {
+      'FRZ-MIX-BER-001': '#8e44ad',
+      'FRZ-MIX-TRP-002': '#f39c12',
+      'FRZ-PLP-BER-003': '#e74c3c',
+      'FRZ-PLP-TRP-004': '#f1c40f',
+      'FRZ-HRT-MIX-005': '#27ae60',
+      'FRZ-SOP-CMB-006': '#d35400'
+    };
+    return colorMap[sku] || '#6c757d';
   };
+
+  const handleCreateOrder = async (product) => {
+    setLoading(true);
+    
+    try {
+      // Datos que se envían al backend
+      const orderData = {
+        sku: product.sku,
+        cantidad: product.cantidadFija,
+        id_centro_produccion: 1,
+        id_ceco: 100,
+        responsable: user.username
+      };
+
+      const response = await ProductionService.createProductionOrder(orderData);
+      
+      if (response.success) {
+        // Agregar orden a la lista local
+        const newOrder = {
+          ...response.data,
+          producto: product
+        };
+        
+        setProductionOrders([...productionOrders, newOrder]);
+        alert(`✅ Orden creada exitosamente\n\nCódigo: ${response.data.codigo}\nSKU: ${response.data.sku}\nCantidad: ${response.data.cantidad} ${product.unidadMedida}\nResponsable: ${response.data.usuario_responsable}`);
+      } else {
+        alert(`❌ Error: ${response.error}`);
+      }
+    } catch (error) {
+      console.error('Error creando orden:', error);
+      alert('❌ Error al crear la orden de producción');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   return (
     <div className="production-container">
@@ -157,8 +120,8 @@ const Production = () => {
             <i className="fas fa-clock"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{productionOrders.filter(o => o.status === 'pending').length}</div>
-            <div className="stat-label">Pendientes</div>
+            <div className="stat-value">{productionOrders.filter(o => o.estado === 'CREADA').length}</div>
+            <div className="stat-label">Creadas</div>
           </div>
         </div>
 
@@ -167,7 +130,7 @@ const Production = () => {
             <i className="fas fa-cogs"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{productionOrders.filter(o => o.status === 'in-progress').length}</div>
+            <div className="stat-value">{productionOrders.filter(o => o.estado === 'EN_PROCESO').length}</div>
             <div className="stat-label">En Proceso</div>
           </div>
         </div>
@@ -176,105 +139,70 @@ const Production = () => {
       <div className="products-grid">
         <h3>Selecciona el tipo de producto a producir:</h3>
         <div className="product-cards">
-          {productTypes.map((product) => (
-            <div key={product.id} className="product-card card">
+          {loading ? (
+            <div className="loading-message">Cargando productos...</div>
+          ) : (
+            products.map((product) => (
+            <div key={product.sku} className="product-card card">
               <div className="product-header" style={{ backgroundColor: product.color }}>
                 <i className={product.icon}></i>
               </div>
               <div className="product-info">
                 <h4>{product.name}</h4>
                 <p>{product.description}</p>
-                <div className="ingredients-list">
-                  {product.ingredients.map((ingredient, index) => (
-                    <span key={index} className="ingredient-tag">
-                      {ingredient.name} ({ingredient.percentage}%)
-                    </span>
-                  ))}
+                <div className="product-details">
+                  <div className="detail-item">
+                    <strong>SKU:</strong> {product.sku}
+                  </div>
+                  <div className="detail-item">
+                    <strong>Cantidad por lote:</strong> {product.cantidadFija} {product.unidadMedida}
+                  </div>
                 </div>
                 <button 
                   className="create-order-btn"
                   onClick={() => handleCreateOrder(product)}
+                  disabled={loading}
                 >
-                  <i className="fas fa-plus"></i> Crear Orden
+                  <i className="fas fa-plus"></i> {loading ? 'Creando...' : 'Crear Orden'}
                 </button>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
-          {/* // Modal para crear orden de producción */}
-          {/* //un modal es una ventana emergente que aparece sobre la interfaz principal para mostrar información adicional o solicitar acciones del usuario. */}
-      {selectedProduct && (
-        <div className="order-modal">
-          <div className="modal-content card">
-            <div className="modal-header">
-              <h3>Crear Orden de Producción</h3>
-              <button 
-                className="close-btn"
-                onClick={() => setSelectedProduct(null)}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="selected-product">
-                <h4>{selectedProduct.name}</h4>
-                <p>{selectedProduct.description}</p>
-              </div>
-
-              <form onSubmit={handleSubmitOrder}>
-                <div className="form-group">
-                  <label htmlFor="quantity">Cantidad a producir (kg)</label>
-                  <input
-                    type="number"
-                    id="quantity"
-                    name="quantity"
-                    value={orderForm.quantity}
-                    onChange={handleFormChange}
-                    placeholder="Ej: 50"
-                    step="0.1"
-                    min="0.1"
-                  />
-                </div>
-
-                {orderForm.quantity && (
-                  <div className="ingredients-calculation">
-                    <h5>Materia prima requerida:</h5>
-                    {calculateIngredients(selectedProduct, parseFloat(orderForm.quantity)).map((ingredient, index) => (
-                      <div key={index} className="ingredient-requirement">
-                        <span>{ingredient.name}:</span>
-                        <strong>{ingredient.amount} kg</strong>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label htmlFor="notes">Notas adicionales</label>
-                  <textarea
-                    id="notes"
-                    name="notes"
-                    value={orderForm.notes}
-                    onChange={handleFormChange}
-                    placeholder="Instrucciones especiales..."
-                    rows="3"
-                  />
-                </div>
-
-                <div className="modal-actions">
-                  <button type="button" onClick={() => setSelectedProduct(null)}>
-                    Cancelar
-                  </button>
-                  <button type="submit" className="primary">
-                    Crear Orden
-                  </button>
-                </div>
-              </form>
-            </div>
-
-          </div>
+      {productionOrders.length > 0 && (
+        <div className="orders-list card">
+          <h3>Órdenes de Producción Creadas</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>SKU</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Estado</th>
+                <th>Responsable</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productionOrders.map((order) => (
+                <tr key={order.id_op}>
+                  <td className="order-code">{order.codigo}</td>
+                  <td className="sku-code">{order.sku}</td>
+                  <td>{order.producto.name}</td>
+                  <td>{order.cantidad} {order.producto.unidadMedida}</td>
+                  <td>
+                    <span className="status-badge status-info">{order.estado}</span>
+                  </td>
+                  <td>{order.usuario_responsable}</td>
+                  <td>{new Date(order.fecha_creacion).toLocaleDateString('es-ES')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -883,13 +883,18 @@ button:hover {
     margin-bottom: 1.5rem;
 }
 
-.ingredient-tag {
-    background: #f8f9fa;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
+.product-details {
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
     color: #666;
-    border: 1px solid #e9ecef;
+}
+
+.detail-item strong {
+    color: #333;
 }
 
 .create-order-btn {
@@ -996,9 +1001,45 @@ button:hover {
     color: white;
 }
 
-.modal-actions button.primary {
-    background: linear-gradient(135deg, #5338b3, #10003de7);
-    color: white;
+.orders-list {
+    margin-top: 2rem;
+}
+
+.orders-list h3 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.order-code {
+    font-weight: bold;
+    color: #5338b3;
+}
+
+.sku-code {
+    font-family: monospace;
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.loading-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+}
+
+.create-order-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.create-order-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 @media (max-width: 768px) {
