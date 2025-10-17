@@ -69,7 +69,6 @@ const Production = ({ user }) => {
         sku: product.sku,
         cantidad: product.cantidadFija,
         id_centro_produccion: 1,
-        id_ceco: 100,
         responsable: user.username
       };
 

@@ -15,7 +15,6 @@ class ProductionService {
         sku: orderData.sku,                           // SKU del producto
         cantidad: orderData.cantidad,                 // Cantidad fija del lote
         id_centro_produccion: orderData.id_centro_produccion, // Centro de producción
-        id_ceco: orderData.id_ceco,                   // Centro de costo
         usuario_responsable: orderData.responsable    // Usuario que crea la orden
       };
 
@@ -30,7 +29,6 @@ class ProductionService {
           sku: payload.sku,
           cantidad: payload.cantidad,
           id_centro_produccion: payload.id_centro_produccion,
-          id_ceco: payload.id_ceco,
           estado: 'CREADA',
           fecha_creacion: new Date().toISOString(),
           usuario_responsable: payload.usuario_responsable
