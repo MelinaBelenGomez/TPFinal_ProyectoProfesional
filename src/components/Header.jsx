@@ -20,6 +20,7 @@ const Header = ({ onLogout, user }) => {
         { icon: 'fas fa-box', text: 'Productos', path: '/products' },
         { icon: 'fas fa-users', text: 'Clientes', path: '/clients' },
         { icon: 'fas fa-shopping-cart', text: 'Pedidos', path: '/orders' },
+        { icon: 'fas fa-industry', text: 'Producción', path: '/production' },
         { icon: 'fas fa-chart-bar', text: 'Reportes', path: '/reports' },
         { icon: 'fas fa-cog', text: 'Configuración', path: '/settings' }
       ];

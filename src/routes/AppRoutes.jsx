@@ -5,6 +5,7 @@ import ProductsTable from '../components/ProductsTable';
 import ProductForm from '../components/ProductForm';
 import Reports from '../pages/Reports';
 import Orders from '../pages/Orders';
+import Production from '../pages/Production';
 
 const AppRoutes = ({ user }) => {
   if (user?.role === 'admin') {
@@ -19,6 +20,7 @@ const AppRoutes = ({ user }) => {
         } />
         <Route path="/reports" element={<Reports />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/production" element={<Production />} />
         <Route path="/products" element={<div>Página de Productos</div>} />
         <Route path="/clients" element={<div>Página de Clientes</div>} />
         <Route path="/settings" element={<div>Página de Configuración</div>} />
