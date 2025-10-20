@@ -6,6 +6,7 @@ import ProductForm from '../components/ProductForm';
 import Reports from '../pages/Reports';
 import Orders from '../pages/Orders';
 import Production from '../pages/Production';
+import WorkStation from '../components/WorkStation';
 import Products from "../pages/Products";
 
 const AppRoutes = ({ user }) => {
@@ -28,11 +29,19 @@ const AppRoutes = ({ user }) => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
-  } else {
+  } else if (user?.role === 'employee') {
     return (
       <Routes>
         <Route path="/" element={<EmployeeDashboard user={user} />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  } else {
+    // Operarios de producción
+    return (
+      <Routes>
+        <Route path="/" element={<WorkStation user={user} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

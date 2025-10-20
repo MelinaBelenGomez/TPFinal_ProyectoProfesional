@@ -24,10 +24,15 @@ const Header = ({ onLogout, user }) => {
         { icon: 'fas fa-chart-bar', text: 'Reportes', path: '/reports' },
         { icon: 'fas fa-cog', text: 'Configuración', path: '/settings' }
       ];
-    } else {
+    } else if (user?.role === 'employee') {
       return [
         { icon: 'fas fa-clock', text: 'Registro de Horarios', path: '/' },
         { icon: 'fas fa-chart-line', text: 'Mis Reportes', path: '/reports' }
+      ];
+    } else {
+      // Operarios de producción
+      return [
+        { icon: 'fas fa-tasks', text: 'Mi Estación', path: '/' }
       ];
     }
   };

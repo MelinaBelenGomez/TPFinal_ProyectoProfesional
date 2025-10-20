@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import AuthService from '../services/authService';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -13,19 +16,41 @@ const Login = ({ onLogin }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
-    if (formData.username && formData.password) {
-      if (formData.username === 'admin' && formData.password === 'frozen2025') {
-        onLogin({ isAuthenticated: true, role: 'admin', username: 'admin' });
-      } else if (formData.username === 'empleado' && formData.password === 'emp2025') {
-        onLogin({ isAuthenticated: true, role: 'employee', username: 'empleado' });
+    if (!formData.username || !formData.password) {
+      setError('Por favor complete todos los campos');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const response = await AuthService.login({
+        username: formData.username,
+        password: formData.password
+      });
+
+      if (response.success) {
+        // Login exitoso
+        const userData = {
+          isAuthenticated: true,
+          ...response.data.user,
+          token: response.data.token
+        };
+        
+        onLogin(userData);
       } else {
-        alert('Credenciales incorrectas. Usa: admin/frozen2025 o empleado/emp2025');
+        // Error en login
+        setError(response.message || 'Error al iniciar sesión');
       }
-    } else {
-      alert('Por favor complete todos los campos.');
+    } catch (error) {
+      console.error('Error en login:', error);
+      setError('Error de conexión. Intente nuevamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,6 +66,13 @@ const Login = ({ onLogin }) => {
         <p>Accede al Sistema de Gestión</p>
         
         <form onSubmit={handleSubmit}>
+          {error && (
+            <div className="error-message">
+              <i className="fas fa-exclamation-triangle"></i>
+              {error}
+            </div>
+          )}
+          
           <div className="form-group">
             <label htmlFor="username">
               <i className="fas fa-user"></i> Usuario
@@ -52,6 +84,7 @@ const Login = ({ onLogin }) => {
               value={formData.username}
               onChange={handleChange}
               placeholder="Ingrese su usuario"
+              disabled={loading}
             />
           </div>
           
@@ -66,17 +99,34 @@ const Login = ({ onLogin }) => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Ingrese su contraseña"
+              disabled={loading}
             />
           </div>
           
-          <button type="submit" className="login-btn">
-            <i className="fas fa-sign-in-alt"></i> Ingresar
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i> Iniciando sesión...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-sign-in-alt"></i> Ingresar
+              </>
+            )}
           </button>
         </form>
         
         <div className="login-info">
-          <p><strong>Admin:</strong> admin / frozen2025</p>
-          <p><strong>Empleado:</strong> empleado / emp2025</p>
+          <p><strong>Contraseña para todos:</strong> frozen2025</p>
+          <hr style={{margin: '0.5rem 0', border: '1px solid #e9ecef'}} />
+          <p><strong>Admin:</strong> admin</p>
+          <p><strong>Empleado:</strong> empleado</p>
+          <p><strong>Lavado:</strong> operario_lavado</p>
+          <p><strong>Clasificación:</strong> operario_clasificacion</p>
+          <p><strong>Pelado:</strong> pelado_trozado</p>
+          <p><strong>Escurrido:</strong> operario_escurrido</p>
+          <p><strong>Congelación:</strong> operario_congelacion</p>
+          <p><strong>Empaquetado:</strong> operario_empaquetado</p>
         </div>
       </div>
     </div>
