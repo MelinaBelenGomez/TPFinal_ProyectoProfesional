@@ -8,6 +8,7 @@ import Orders from '../pages/Orders';
 import Production from '../pages/Production';
 import WorkStation from '../components/WorkStation';
 import Products from "../pages/Products";
+import RawMaterials from '../pages/RawMaterials';
 
 const AppRoutes = ({ user }) => {
   if (user?.role === 'admin') {
@@ -24,6 +25,7 @@ const AppRoutes = ({ user }) => {
         <Route path="/orders" element={<Orders />} />
         <Route path="/production" element={<Production user={user} />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/raw-materials" element={<RawMaterials />} />
         <Route path="/clients" element={<div>Página de Clientes</div>} />
         <Route path="/settings" element={<div>Página de Configuración</div>} />
         <Route path="*" element={<Navigate to="/" replace />} />

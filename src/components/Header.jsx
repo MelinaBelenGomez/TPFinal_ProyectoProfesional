@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
+import '../styles/notifications.css';
 
 const Header = ({ onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -18,6 +20,7 @@ const Header = ({ onLogout, user }) => {
       return [
         { icon: 'fas fa-home', text: 'Inicio', path: '/' },
         { icon: 'fas fa-box', text: 'Productos', path: '/products' },
+        { icon: 'fas fa-seedling', text: 'Materia Prima', path: '/raw-materials' },
         { icon: 'fas fa-users', text: 'Clientes', path: '/clients' },
         { icon: 'fas fa-shopping-cart', text: 'Pedidos', path: '/orders' },
         { icon: 'fas fa-industry', text: 'Producción', path: '/production' },
@@ -43,6 +46,7 @@ const Header = ({ onLogout, user }) => {
         <div className="logo-container">
           <h1 className="logo">FROZEN</h1>
           <div className="header-actions">
+            {user?.role === 'admin' && <NotificationBell />}
             <button className="logout-btn" onClick={onLogout}>
               <i className="fas fa-sign-out-alt"></i> Salir
             </button>
