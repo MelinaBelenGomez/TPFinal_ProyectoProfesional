@@ -9,6 +9,8 @@ import Production from '../pages/Production';
 import WorkStation from '../components/WorkStation';
 import Products from "../pages/Products";
 import RawMaterials from '../pages/RawMaterials';
+import Settings from '../pages/Settings';
+import Clients from '../pages/Clients';
 
 const AppRoutes = ({ user }) => {
   if (user?.role === 'admin') {
@@ -26,8 +28,8 @@ const AppRoutes = ({ user }) => {
         <Route path="/production" element={<Production user={user} />} />
         <Route path="/products" element={<Products />} />
         <Route path="/raw-materials" element={<RawMaterials />} />
-        <Route path="/clients" element={<div>Página de Clientes</div>} />
-        <Route path="/settings" element={<div>Página de Configuración</div>} />
+        <Route path="/clients" element={<Clients />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
