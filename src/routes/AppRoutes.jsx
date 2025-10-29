@@ -11,6 +11,7 @@ import Products from "../pages/Products";
 import RawMaterials from '../pages/RawMaterials';
 import Settings from '../pages/Settings';
 import Clients from '../pages/Clients';
+import TestBackend from '../pages/TestBackend';
 
 const AppRoutes = ({ user }) => {
   if (user?.role === 'admin') {
@@ -30,6 +31,7 @@ const AppRoutes = ({ user }) => {
         <Route path="/raw-materials" element={<RawMaterials />} />
         <Route path="/clients" element={<Clients />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/test-backend" element={<TestBackend />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
