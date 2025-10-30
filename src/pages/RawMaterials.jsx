@@ -49,9 +49,17 @@ const RawMaterials = () => {
 
   const loadMaterials = async () => {
     setLoading(true);
-    const response = await RawMaterialService.getAllRawMaterials();
-    if (response.success) {
-      setMaterials(response.data);
+    try {
+      const response = await ProductionServiceAxios.getRawMaterialsWithStock();
+      if (response.success) {
+        setMaterials(response.data);
+      } else {
+        console.error('Error cargando materias primas:', response.message);
+        setMaterials([]);
+      }
+    } catch (error) {
+      console.error('Error cargando materias primas:', error);
+      setMaterials([]);
     }
     setLoading(false);
   };
@@ -69,24 +77,21 @@ const RawMaterials = () => {
     });
     
     if (productResponse.success) {
-      // Agregar a la lista local (simulado por ahora)
-      const response = await RawMaterialService.addRawMaterial(newMaterial);
-      if (response.success) {
-        setMaterials([...materials, response.data]);
-        setNewMaterial({
-          codigo: '',
-          nombre: '',
-          categoria: '',
-          stock_actual: '',
-          stock_minimo: '',
-          unidad: 'kg',
-          precio_unitario: '',
-          proveedor: '',
-          fecha_vencimiento: ''
-        });
-        setShowAddForm(false);
-        alert('✅ Materia prima creada exitosamente');
-      }
+      setNewMaterial({
+        codigo: '',
+        nombre: '',
+        categoria: '',
+        stock_actual: '',
+        stock_minimo: '',
+        unidad: 'kg',
+        precio_unitario: '',
+        proveedor: '',
+        fecha_vencimiento: ''
+      });
+      setShowAddForm(false);
+      alert('✅ Materia prima creada exitosamente');
+      // Recargar materiales desde el backend
+      loadMaterials();
     } else {
       alert('❌ Error al crear materia prima: ' + productResponse.message);
     }
@@ -110,6 +115,8 @@ const RawMaterials = () => {
         alert('✅ Stock agregado exitosamente');
         setStockData({ sku: '', idAlmacen: '', cantidad: '' });
         setShowStockForm(false);
+        // Recargar materiales para mostrar el stock actualizado
+        loadMaterials();
       } else {
         alert('❌ Error al agregar stock: ' + stockResponse.message);
       }
@@ -119,22 +126,14 @@ const RawMaterials = () => {
   };
 
   const handleUpdateStock = async (materialId, newStock) => {
-    const response = await RawMaterialService.updateStock(materialId, newStock);
-    if (response.success) {
-      setMaterials(materials.map(m => 
-        m.id === materialId ? response.data : m
-      ));
-      setEditingStock(null);
-    }
+    // Por ahora deshabilitado - necesitaría implementar endpoint de actualización
+    alert('⚠️ Función no disponible. Use "Agregar Stock" para incrementar.');
+    setEditingStock(null);
   };
 
   const handleDeleteMaterial = async (materialId) => {
-    if (confirm('¿Está seguro de eliminar esta materia prima?')) {
-      const response = await RawMaterialService.deleteRawMaterial(materialId);
-      if (response.success) {
-        setMaterials(materials.filter(m => m.id !== materialId));
-      }
-    }
+    // Por ahora deshabilitado - necesitaría implementar endpoint de eliminación
+    alert('⚠️ Función no disponible desde el backend.');
   };
 
   const getStatusColor = (estado) => {

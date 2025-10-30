@@ -359,6 +359,71 @@ class ProductionServiceAxios {
       };
     }
   }
+
+  // 🔗 CONECTADO AL BACKEND: Obtener materias primas con stock
+  static async getRawMaterialsWithStock() {
+    try {
+      const [productsResponse, almacenesResponse] = await Promise.all([
+        this.getAvailableProducts(),
+        this.getAlmacenes()
+      ]);
+      
+      if (productsResponse.success && almacenesResponse.success) {
+        const materials = [];
+        
+        for (const product of productsResponse.data) {
+          let totalStock = 0;
+          let stockDetails = [];
+          
+          for (const almacen of almacenesResponse.data) {
+            try {
+              const stockResponse = await this.consultarStock(product.sku, almacen.idAlmacen);
+              if (stockResponse.success && stockResponse.data) {
+                totalStock += stockResponse.data.stockTotal || 0;
+                stockDetails.push({
+                  almacen: almacen.nombre,
+                  stock: stockResponse.data.stockTotal || 0,
+                  minimo: stockResponse.data.cantidadMinima || 0
+                });
+              }
+            } catch (error) {
+              // Si no hay stock en este almacén, continuar
+            }
+          }
+          
+          materials.push({
+            id: product.sku,
+            codigo: product.sku,
+            nombre: product.nombre,
+            categoria: product.idCategoria || 'Sin categoría',
+            stock_actual: totalStock,
+            stock_minimo: Math.min(...stockDetails.map(s => s.minimo)) || 10,
+            unidad: product.unidadMedida || 'kg',
+            precio_unitario: 0,
+            proveedor: 'Backend',
+            fecha_vencimiento: new Date().toISOString().split('T')[0],
+            estado: totalStock > 0 ? 'DISPONIBLE' : 'AGOTADO',
+            stockDetails: stockDetails
+          });
+        }
+        
+        return {
+          success: true,
+          data: materials
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Error al obtener datos'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener materias primas'
+      };
+    }
+  }
 }
 
 export default ProductionServiceAxios;
