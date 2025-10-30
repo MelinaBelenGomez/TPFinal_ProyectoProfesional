@@ -203,7 +203,7 @@ const [errorData, setErrorData] = useState({
                           orden: showErrorForm.codigo,
                           ...errorData
                         });
-                        alert("✅ Error reportado (simulado)");
+                        alert("✅ Error reportado");
                         setShowErrorForm(null);
                         setErrorData({ lote: '', estado: '', observaciones: '' });
                       }}>
