@@ -24,12 +24,10 @@ const RawMaterials = () => {
     codigo: '',
     nombre: '',
     categoria: '',
-    stock_actual: '',
-    stock_minimo: '',
+    descripcion: '',
+    stock_inicial: '',
     unidad: 'kg',
-    precio_unitario: '',
-    proveedor: '',
-    fecha_vencimiento: ''
+    idAlmacen: ''
   });
 
   useEffect(() => {
@@ -67,33 +65,23 @@ const RawMaterials = () => {
   const handleAddMaterial = async (e) => {
     e.preventDefault();
     
-    // Primero crear el producto (materia prima)
-    const productResponse = await ProductionServiceAxios.createProduct({
-      sku: newMaterial.codigo,
-      nombre: newMaterial.nombre,
-      descripcion: `${newMaterial.categoria} - ${newMaterial.proveedor}`,
-      unidad_medida: newMaterial.unidad,
-      categoria: newMaterial.categoria
-    });
+    const response = await ProductionServiceAxios.createRawMaterial(newMaterial);
     
-    if (productResponse.success) {
+    if (response.success) {
       setNewMaterial({
         codigo: '',
         nombre: '',
         categoria: '',
-        stock_actual: '',
-        stock_minimo: '',
+        descripcion: '',
+        stock_inicial: '',
         unidad: 'kg',
-        precio_unitario: '',
-        proveedor: '',
-        fecha_vencimiento: ''
+        idAlmacen: ''
       });
       setShowAddForm(false);
       alert('✅ Materia prima creada exitosamente');
-      // Recargar materiales desde el backend
       loadMaterials();
     } else {
-      alert('❌ Error al crear materia prima: ' + productResponse.message);
+      alert('❌ Error al crear materia prima: ' + response.message);
     }
   };
 
@@ -163,8 +151,9 @@ const RawMaterials = () => {
           <button 
             className="btn btn-secondary"
             onClick={() => setShowStockForm(true)}
+            disabled={materials.length === 0}
           >
-            <i className="fas fa-warehouse"></i> Agregar Stock
+            <i className="fas fa-warehouse"></i> Incrementar Stock
           </button>
         </div>
       </div>
@@ -225,7 +214,7 @@ const RawMaterials = () => {
             <form onSubmit={handleAddMaterial}>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>Código:</label>
+                  <label>Código (SKU):</label>
                   <input
                     type="text"
                     value={newMaterial.codigo}
@@ -256,20 +245,35 @@ const RawMaterials = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Stock Actual:</label>
+                  <label>Descripción:</label>
                   <input
-                    type="number"
-                    value={newMaterial.stock_actual}
-                    onChange={(e) => setNewMaterial({...newMaterial, stock_actual: e.target.value})}
-                    required
+                    type="text"
+                    value={newMaterial.descripcion}
+                    onChange={(e) => setNewMaterial({...newMaterial, descripcion: e.target.value})}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Stock Mínimo:</label>
+                  <label>Almacén:</label>
+                  <select
+                    value={newMaterial.idAlmacen}
+                    onChange={(e) => setNewMaterial({...newMaterial, idAlmacen: e.target.value})}
+                    required
+                  >
+                    <option value="">Seleccionar almacén...</option>
+                    {almacenes.filter(a => a.estado === 'ACTIVO').map(almacen => (
+                      <option key={almacen.idAlmacen} value={almacen.idAlmacen}>
+                        {almacen.nombre} - {centros.find(c => c.idCentro === almacen.idCentro)?.sucursal}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Stock Inicial:</label>
                   <input
                     type="number"
-                    value={newMaterial.stock_minimo}
-                    onChange={(e) => setNewMaterial({...newMaterial, stock_minimo: e.target.value})}
+                    min="0"
+                    value={newMaterial.stock_inicial}
+                    onChange={(e) => setNewMaterial({...newMaterial, stock_inicial: e.target.value})}
                     required
                   />
                 </div>
@@ -283,34 +287,6 @@ const RawMaterials = () => {
                       <option key={unit} value={unit}>{unit}</option>
                     ))}
                   </select>
-                </div>
-                <div className="form-group">
-                  <label>Precio Unitario:</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newMaterial.precio_unitario}
-                    onChange={(e) => setNewMaterial({...newMaterial, precio_unitario: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Proveedor:</label>
-                  <input
-                    type="text"
-                    value={newMaterial.proveedor}
-                    onChange={(e) => setNewMaterial({...newMaterial, proveedor: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Fecha Vencimiento:</label>
-                  <input
-                    type="date"
-                    value={newMaterial.fecha_vencimiento}
-                    onChange={(e) => setNewMaterial({...newMaterial, fecha_vencimiento: e.target.value})}
-                    required
-                  />
                 </div>
               </div>
               <div className="form-actions">
@@ -356,37 +332,25 @@ const RawMaterials = () => {
             <div className="material-info">
               <p><strong>Código:</strong> {material.codigo}</p>
               <p><strong>Categoría:</strong> {material.categoria}</p>
-              <p><strong>Proveedor:</strong> {material.proveedor}</p>
-              <p><strong>Precio:</strong> ${material.precio_unitario}</p>
-              <p><strong>Vencimiento:</strong> {material.fecha_vencimiento}</p>
+              <p><strong>Almacén:</strong> {material.almacen}</p>
+              <p><strong>Unidad:</strong> {material.unidad}</p>
             </div>
 
             <div className="stock-section">
               <div className="stock-info">
-                <span className="stock-label">Stock:</span>
-                {editingStock === material.id ? (
-                  <div className="stock-edit">
-                    <input
-                      type="number"
-                      defaultValue={material.stock_actual}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleUpdateStock(material.id, e.target.value);
-                        }
-                      }}
-                      onBlur={(e) => handleUpdateStock(material.id, e.target.value)}
-                      autoFocus
-                    />
-                    <span>{material.unidad}</span>
+                <div className="stock-row">
+                  <span className="stock-label">Total:</span>
+                  <span className="stock-value">{material.stock_actual} {material.unidad}</span>
+                </div>
+                <div className="stock-row">
+                  <span className="stock-label">Disponible:</span>
+                  <span className="stock-value">{material.stock_disponible} {material.unidad}</span>
+                </div>
+                {material.stock_reservado > 0 && (
+                  <div className="stock-row">
+                    <span className="stock-label">Reservado:</span>
+                    <span className="stock-value">{material.stock_reservado} {material.unidad}</span>
                   </div>
-                ) : (
-                  <span 
-                    className="stock-value"
-                    onClick={() => setEditingStock(material.id)}
-                  >
-                    {material.stock_actual} {material.unidad}
-                    <i className="fas fa-edit"></i>
-                  </span>
                 )}
               </div>
               <div className="stock-min">
@@ -423,7 +387,7 @@ const RawMaterials = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Agregar Stock a Almacén</h3>
+              <h3>Incrementar Stock Existente</h3>
               <button 
                 className="btn-close"
                 onClick={() => setShowStockForm(false)}

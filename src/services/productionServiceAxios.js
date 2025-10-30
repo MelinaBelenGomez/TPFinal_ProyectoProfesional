@@ -303,21 +303,45 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Habilitar producto en almacén
-  static async habilitarProducto(sku, idAlmacen) {
+  // 🔗 CONECTADO AL BACKEND: Crear materia prima completa
+  static async createRawMaterial(materialData) {
     try {
-      await axios.put(`${this.baseURL}/stock/habilitar-producto`, {
-        sku: sku,
-        idAlmacen: idAlmacen
+      // 1. Crear producto
+      const productResponse = await this.createProduct({
+        sku: materialData.codigo,
+        nombre: materialData.nombre,
+        descripcion: materialData.descripcion || `${materialData.categoria}`,
+        unidad_medida: materialData.unidad,
+        categoria: materialData.categoria
       });
+      
+      if (!productResponse.success) {
+        return productResponse;
+      }
+      
+      // 2. Habilitar en almacén
+      await axios.put(`${this.baseURL}/stock/habilitar-producto`, {
+        sku: materialData.codigo,
+        idAlmacen: materialData.idAlmacen
+      });
+      
+      // 3. Agregar stock inicial
+      if (materialData.stock_inicial > 0) {
+        await axios.put(`${this.baseURL}/stock/incrementar`, {
+          sku: materialData.codigo,
+          idAlmacen: materialData.idAlmacen,
+          cantidad: materialData.stock_inicial
+        });
+      }
+      
       return {
         success: true,
-        message: 'Producto habilitado en almacén'
+        message: 'Materia prima creada exitosamente'
       };
     } catch (error) {
       return {
         success: false,
-        message: 'Error al habilitar producto'
+        message: 'Error al crear materia prima'
       };
     }
   }
@@ -360,51 +384,59 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener materias primas con stock
+  // 🔗 CONECTADO AL BACKEND: Obtener todos los stocks
+  static async getAllStocks() {
+    try {
+      const response = await axios.get(`${this.baseURL}/stock/todos`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener stocks'
+      };
+    }
+  }
+
+  // 🔗 CONECTADO AL BACKEND: Obtener materias primas desde stock_almacen
   static async getRawMaterialsWithStock() {
     try {
-      const [productsResponse, almacenesResponse] = await Promise.all([
+      const [stocksResponse, productsResponse, almacenesResponse] = await Promise.all([
+        this.getAllStocks(),
         this.getAvailableProducts(),
         this.getAlmacenes()
       ]);
       
-      if (productsResponse.success && almacenesResponse.success) {
+      if (stocksResponse.success && productsResponse.success && almacenesResponse.success) {
         const materials = [];
         
-        for (const product of productsResponse.data) {
-          let totalStock = 0;
-          let stockDetails = [];
+        for (const stock of stocksResponse.data) {
+          // Buscar información del producto
+          const product = productsResponse.data.find(p => p.sku === stock.sku);
+          const almacen = almacenesResponse.data.find(a => a.idAlmacen === stock.idAlmacen);
           
-          for (const almacen of almacenesResponse.data) {
-            try {
-              const stockResponse = await this.consultarStock(product.sku, almacen.idAlmacen);
-              if (stockResponse.success && stockResponse.data) {
-                totalStock += stockResponse.data.stockTotal || 0;
-                stockDetails.push({
-                  almacen: almacen.nombre,
-                  stock: stockResponse.data.stockTotal || 0,
-                  minimo: stockResponse.data.cantidadMinima || 0
-                });
-              }
-            } catch (error) {
-              // Si no hay stock en este almacén, continuar
-            }
+          if (product && almacen) {
+            materials.push({
+              id: `${stock.sku}-${stock.idAlmacen}`,
+              codigo: stock.sku,
+              nombre: product.nombre,
+              categoria: product.idCategoria || 'Sin categoría',
+              stock_actual: stock.stockTotal,
+              stock_disponible: stock.stockDisponible,
+              stock_reservado: stock.stockReservado,
+              stock_minimo: stock.cantidadMinima,
+              unidad: product.unidadMedida || 'kg',
+              precio_unitario: 0,
+              proveedor: 'Backend',
+              fecha_vencimiento: new Date().toISOString().split('T')[0],
+              estado: stock.stockTotal > 0 ? 'DISPONIBLE' : 'AGOTADO',
+              almacen: almacen.nombre,
+              idAlmacen: stock.idAlmacen,
+              idStock: stock.idStock
+            });
           }
-          
-          materials.push({
-            id: product.sku,
-            codigo: product.sku,
-            nombre: product.nombre,
-            categoria: product.idCategoria || 'Sin categoría',
-            stock_actual: totalStock,
-            stock_minimo: Math.min(...stockDetails.map(s => s.minimo)) || 10,
-            unidad: product.unidadMedida || 'kg',
-            precio_unitario: 0,
-            proveedor: 'Backend',
-            fecha_vencimiento: new Date().toISOString().split('T')[0],
-            estado: totalStock > 0 ? 'DISPONIBLE' : 'AGOTADO',
-            stockDetails: stockDetails
-          });
         }
         
         return {
