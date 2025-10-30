@@ -5,6 +5,13 @@ const WorkStation = ({ user }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stageInfo, setStageInfo] = useState(null);
+const [showErrorForm, setShowErrorForm] = useState(null); // guarda el ID de la orden con el form abierto
+
+const [errorData, setErrorData] = useState({
+  lote: '',
+  estado: '',
+  observaciones: ''
+});
 
   useEffect(() => {
     loadOrders();
@@ -30,7 +37,7 @@ const WorkStation = ({ user }) => {
     setStageInfo(info);
   };
 
-  const handleCompleteStage = async (order) => {
+  const handleCompleteStage = async (order) => {  
     const confirmMessage = `¿Confirmar que completaste la etapa de ${stageInfo.title} para la orden ${order.codigo}?`;
     
     if (!window.confirm(confirmMessage)) {
@@ -88,6 +95,8 @@ const WorkStation = ({ user }) => {
         </div>
       </div>
 
+      
+
       <div className="workstation-stats">
         <div className="stat-card card">
           <div className="stat-icon">
@@ -110,6 +119,7 @@ const WorkStation = ({ user }) => {
         </div>
       </div>
 
+     
       <div className="orders-section">
         <h3>Órdenes en tu Estación</h3>
         
@@ -151,17 +161,116 @@ const WorkStation = ({ user }) => {
                     </div>
                   </div>
                 </div>
-
                 <div className="order-actions">
+                <button 
+                  className="complete-btn"
+                  onClick={() => handleCompleteStage(order)}
+                  disabled={loading}
+                >
+                  <i className="fas fa-check"></i>
+                  Completar {stageInfo.title}
+                </button>
+
+                {/* Botón de reportar error, solo para ciertos perfiles */}
+                {(
                   <button 
-                    className="complete-btn"
-                    onClick={() => handleCompleteStage(order)}
+                    className="error-btn" 
+                    onClick={() => setShowErrorForm(order)}
                     disabled={loading}
                   >
-                    <i className="fas fa-check"></i>
-                    Completar {stageInfo.title}
+                    ⚠️ Reportar Error
                   </button>
-                </div>
+
+                )}
+
+
+
+                {showErrorForm && (
+                  <div className="modal-overlay">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h3>Reportar Error - Orden {showErrorForm.codigo}</h3>
+                        <button 
+                          className="btn-close"
+                          onClick={() => setShowErrorForm(null)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        console.log("Datos de error reportado:", {
+                          orden: showErrorForm.codigo,
+                          ...errorData
+                        });
+                        alert("✅ Error reportado");
+                        setShowErrorForm(null);
+                        setErrorData({ lote: '', estado: '', observaciones: '' });
+                      }}>
+                        <div className="form-grid">
+                          <div className="form-group">
+                            <label>Orden:</label>
+                            <input type="text" value={showErrorForm.codigo} disabled />
+                          </div>
+
+                          <div className="form-group">
+                            <label>Lote:</label>
+                            <input
+                              type="text"
+                              value={errorData.lote}
+                              onChange={(e) => setErrorData({...errorData, lote: e.target.value})}
+                              required
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <label>Estado:</label>
+                            <select
+                              value={errorData.estado}
+                              onChange={(e) => setErrorData({...errorData, estado: e.target.value})}
+                              required
+                            >
+                              <option value="">Seleccionar...</option>
+                              <option value="cancelado">Cancelado</option>
+                              <option value="pausado">Pausado</option>
+                            </select>
+                          </div>
+
+                          <div className="form-group">
+                            <label>Observaciones:</label>
+                            <textarea
+                              value={errorData.observaciones}
+                              onChange={(e) => setErrorData({...errorData, observaciones: e.target.value})}
+                              rows="3"
+                            ></textarea>
+                          </div>
+                        </div>
+
+                        <div className="form-actions">
+                          <button 
+                            type="button" 
+                            className="btn btn-secondary" 
+                            onClick={() => setShowErrorForm(null)}
+                          >
+                            Cancelar
+                          </button>
+                          <button 
+                            type="submit" 
+                            className="btn btn-primary"
+                          >
+                            Guardar y Salir
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                  
+                )}
+
+
+              </div>
+
+
               </div>
             ))}
           </div>

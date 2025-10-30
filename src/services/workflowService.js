@@ -79,6 +79,7 @@ class WorkflowService {
     return stateFlow[currentState];
   }
 
+
   // Obtener órdenes para un rol específico
   static async getOrdersForRole(userRole) {
     await this.delay();
@@ -236,6 +237,8 @@ class WorkflowService {
     
     return stageInfo[role] || null;
   }
+
+  
 }
 
 export default WorkflowService;

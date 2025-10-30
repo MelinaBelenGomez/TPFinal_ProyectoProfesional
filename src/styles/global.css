@@ -1227,24 +1227,52 @@ button:hover {
 }
 
 .order-actions {
-    text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0;
 }
 
+/* 🔹 Estilo base compartido para ambos botones */
+.order-actions button {
+  min-width: 220px;             /* mismos anchos */
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+
+
 .complete-btn {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s;
-    width: 100%;
+  background-color: #28a745;
+  color: #ffffff;
 }
 
 .complete-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+  background-color: #218838;
+}
+
+.error-btn {
+  background-color: #615c5d;
+  color: #ffffff;
+}
+
+.error-btn:hover {
+  background-color: #b52a36;
+}
+
+.order-actions i {
+  font-size: 16px;
 }
 
 .complete-btn:disabled {
@@ -1387,5 +1415,6 @@ th, td {
 th {
   background: #eee;
 }
+
 
 }
