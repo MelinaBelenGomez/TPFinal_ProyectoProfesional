@@ -26,6 +26,10 @@ const Products = () => {
     tipoProducto: '' // 'materia-prima', 'producto-final', ''
   });
 
+  // --- Estados para BOM ---
+  const [ingredientes, setIngredientes] = useState([]);
+  const [materiasPrimas, setMateriasPrimas] = useState([]);
+
   // 🔗 CONECTADO AL BACKEND
   useEffect(() => {
     loadProducts();
@@ -38,6 +42,9 @@ const Products = () => {
       const response = await ProductionServiceAxios.getAvailableProducts();
       if (response.success) {
         setProductos(response.data);
+        // Filtrar materias primas para el BOM
+        const mp = response.data.filter(p => p.sku.startsWith('MP-'));
+        setMateriasPrimas(mp);
       }
     } catch (error) {
       console.error('Error cargando productos:', error);
@@ -107,21 +114,86 @@ const Products = () => {
       return;
     }
 
+    // Validar BOM para productos finales
+    if (categoria === 'Producto Final') {
+      if (ingredientes.length === 0) {
+        alert('Los productos finales deben tener al menos un ingrediente en su receta (BOM)');
+        return;
+      }
+      
+      // Validar que todos los ingredientes estén completos
+      const ingredientesIncompletos = ingredientes.filter(ing => !ing.sku || !ing.cantidad || ing.cantidad <= 0);
+      if (ingredientesIncompletos.length > 0) {
+        alert(`Hay ${ingredientesIncompletos.length} ingrediente(s) incompleto(s). Por favor completa todos los campos.`);
+        return;
+      }
+    }
+
     const productData = {
-      sku: sku.toUpperCase(), // Convertir a mayúsculas
+      sku: sku.toUpperCase(),
       nombre,
       descripcion,
       unidad_medida: unidadMedida,
       categoria
     };
 
+    // Crear producto
     const response = await ProductionServiceAxios.createProduct(productData);
     if (response.success) {
-      alert(response.message);
+      // Si es producto final, crear BOM
+      if (categoria === 'Producto Final' && ingredientes.length > 0) {
+        try {
+          await crearBomProducto(sku.toUpperCase());
+          alert(`Producto y BOM creados exitosamente\n- Producto: ${sku.toUpperCase()}\n- Ingredientes: ${ingredientes.length}`);
+        } catch (bomError) {
+          alert(`Producto creado, pero error en BOM: ${bomError.message}\nPuedes agregar el BOM manualmente después.`);
+        }
+      } else {
+        alert('Producto creado exitosamente');
+      }
+      
       limpiarFormulario();
-      loadProducts(); // Recargar productos
+      loadProducts();
     } else {
       alert(response.message);
+    }
+  };
+
+  // --- Función para crear BOM del producto ---
+  const crearBomProducto = async (skuProducto) => {
+    console.log(`🧱 Creando BOM para ${skuProducto} con ${ingredientes.length} ingredientes`);
+    
+    try {
+      for (let i = 0; i < ingredientes.length; i++) {
+        const ingrediente = ingredientes[i];
+        
+        // Validar que el ingrediente esté completo
+        if (!ingrediente.sku || !ingrediente.cantidad) {
+          console.warn(`⚠️ Ingrediente ${i + 1} incompleto, saltando...`);
+          continue;
+        }
+        
+        const bomData = {
+          skuProductoFinal: skuProducto,
+          skuMaterial: ingrediente.sku,
+          cantPorUnidad: parseInt(ingrediente.cantidad)
+        };
+        
+        console.log(`📝 Creando entrada BOM ${i + 1}/${ingredientes.length}:`, bomData);
+        
+        const response = await ProductionServiceAxios.createBomEntry(bomData);
+        if (!response.success) {
+          console.error(`❌ Error en ingrediente ${i + 1}:`, response.message);
+          throw new Error(`Error al agregar ${ingrediente.sku}: ${response.message}`);
+        }
+        
+        console.log(`✅ Entrada BOM ${i + 1} creada exitosamente`);
+      }
+      
+      console.log(`🎉 BOM completo creado para ${skuProducto}`);
+    } catch (error) {
+      console.error('❌ Error creando BOM:', error);
+      throw error;
     }
   };
 
@@ -132,6 +204,23 @@ const Products = () => {
     setDescripcion("");
     setUnidadMedida("");
     setCategoria("");
+    setIngredientes([]);
+  };
+
+  // --- Funciones para manejar ingredientes del BOM ---
+  const agregarIngrediente = () => {
+    setIngredientes([...ingredientes, { sku: '', cantidad: '' }]);
+  };
+
+  const eliminarIngrediente = (index) => {
+    const nuevosIngredientes = ingredientes.filter((_, i) => i !== index);
+    setIngredientes(nuevosIngredientes);
+  };
+
+  const actualizarIngrediente = (index, campo, valor) => {
+    const nuevosIngredientes = [...ingredientes];
+    nuevosIngredientes[index][campo] = valor;
+    setIngredientes(nuevosIngredientes);
   };
 
   // --- Función para eliminar un producto ---
@@ -269,6 +358,92 @@ const Products = () => {
             <option value="cajas">Cajas</option>
           </select>
         </div>
+
+        {/* Sección BOM - Solo para Productos Finales */}
+        {categoria === 'Producto Final' && (
+          <div className="bom-section" style={{ 
+            marginTop: '20px', 
+            padding: '15px', 
+            border: '2px solid #007bff', 
+            borderRadius: '8px', 
+            background: '#f8f9ff' 
+          }}>
+            <h4 style={{ color: '#007bff', marginBottom: '15px' }}>🧱 Receta del Producto (BOM)</h4>
+            <p style={{ marginBottom: '15px', color: '#6c757d' }}>Define qué materias primas y en qué cantidad necesita este producto:</p>
+            
+            {ingredientes.map((ingrediente, index) => (
+              <div key={index} style={{ 
+                display: 'flex', 
+                gap: '10px', 
+                alignItems: 'center', 
+                marginBottom: '10px',
+                padding: '10px',
+                background: 'white',
+                borderRadius: '5px',
+                border: '1px solid #dee2e6'
+              }}>
+                <select
+                  value={ingrediente.sku}
+                  onChange={(e) => actualizarIngrediente(index, 'sku', e.target.value)}
+                  style={{ flex: 2, padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                >
+                  <option value="">-- Seleccionar materia prima --</option>
+                  {materiasPrimas.map((mp, mpIndex) => (
+                    <option key={mpIndex} value={mp.sku}>{mp.sku} - {mp.nombre}</option>
+                  ))}
+                </select>
+                
+                <input
+                  type="number"
+                  placeholder="Cantidad"
+                  value={ingrediente.cantidad}
+                  onChange={(e) => actualizarIngrediente(index, 'cantidad', parseInt(e.target.value) || '')}
+                  style={{ flex: 1, padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                  min="1"
+                />
+                
+                <span style={{ fontSize: '12px', color: '#6c757d', minWidth: '60px' }}>gramos</span>
+                
+                <button 
+                  type="button"
+                  onClick={() => eliminarIngrediente(index)}
+                  style={{ 
+                    background: '#dc3545', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '8px 12px', 
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ❌
+                </button>
+              </div>
+            ))}
+            
+            <button 
+              type="button"
+              onClick={agregarIngrediente}
+              style={{ 
+                background: '#28a745', 
+                color: 'white', 
+                border: 'none', 
+                padding: '10px 15px', 
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginTop: '10px'
+              }}
+            >
+              ➕ Agregar Ingrediente
+            </button>
+            
+            {ingredientes.length === 0 && (
+              <p style={{ color: '#dc3545', fontSize: '14px', marginTop: '10px' }}>
+                ⚠️ Los productos finales requieren al menos un ingrediente
+              </p>
+            )}
+          </div>
+        )}
 
         <button 
           type="submit" 

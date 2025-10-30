@@ -178,6 +178,58 @@ class ProductionServiceAxios {
       };
     }
   }
+
+  // 🔗 CONECTADO AL BACKEND: Obtener BOM de un producto
+  static async getBom(sku) {
+    try {
+      const response = await axios.get(`${this.baseURL}/bom/${sku}`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener BOM'
+      };
+    }
+  }
+
+  // 🔗 CONECTADO AL BACKEND: Crear entrada BOM
+  static async createBomEntry(bomData) {
+    try {
+      await axios.post(`${this.baseURL}/bom`, {
+        skuProductoFinal: bomData.skuProductoFinal,
+        skuMaterial: bomData.skuMaterial,
+        cantPorUnidad: bomData.cantPorUnidad
+      });
+      return {
+        success: true,
+        message: 'Ingrediente agregado al BOM'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al agregar ingrediente'
+      };
+    }
+  }
+
+  // 🔗 CONECTADO AL BACKEND: Eliminar BOM completo
+  static async deleteBom(sku) {
+    try {
+      await axios.delete(`${this.baseURL}/bom/${sku}`);
+      return {
+        success: true,
+        message: 'BOM eliminado exitosamente'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al eliminar BOM'
+      };
+    }
+  }
 }
 
 export default ProductionServiceAxios;

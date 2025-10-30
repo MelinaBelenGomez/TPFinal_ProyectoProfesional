@@ -6,6 +6,8 @@ const TestBackend = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newCategory, setNewCategory] = useState({ nombre: '', descripcion: '' });
+  const [bomTest, setBomTest] = useState({ skuProductoFinal: '', skuMaterial: '', cantPorUnidad: '' });
+  const [bomResults, setBomResults] = useState([]);
 
   // Cargar categorías al montar el componente
   useEffect(() => {
@@ -61,6 +63,41 @@ const TestBackend = () => {
       } else {
         alert(response.message);
       }
+    }
+  };
+
+  const handleTestBom = async (e) => {
+    e.preventDefault();
+    if (!bomTest.skuProductoFinal || !bomTest.skuMaterial || !bomTest.cantPorUnidad) {
+      alert('Complete todos los campos del BOM');
+      return;
+    }
+
+    console.log('🧪 Probando BOM:', bomTest);
+    const response = await ProductionServiceAxios.createBomEntry(bomTest);
+    
+    if (response.success) {
+      alert('✅ BOM creado exitosamente');
+      setBomTest({ skuProductoFinal: '', skuMaterial: '', cantPorUnidad: '' });
+    } else {
+      alert(`❌ Error: ${response.message}`);
+      console.error('Error BOM:', response);
+    }
+  };
+
+  const handleGetBom = async () => {
+    if (!bomTest.skuProductoFinal) {
+      alert('Ingresa un SKU de producto final');
+      return;
+    }
+
+    const response = await ProductionServiceAxios.getBom(bomTest.skuProductoFinal);
+    if (response.success) {
+      setBomResults(response.data);
+      console.log('BOM obtenido:', response.data);
+    } else {
+      alert(`Error: ${response.message}`);
+      setBomResults([]);
     }
   };
 
@@ -122,6 +159,64 @@ const TestBackend = () => {
                 <p>No hay categorías creadas. Usa el formulario de arriba para crear la primera categoría.</p>
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Sección BOM Test */}
+      <div className="card">
+        <h3>🧱 Test BOM</h3>
+        
+        <form onSubmit={handleTestBom} style={{ marginBottom: '20px' }}>
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="SKU Producto Final (ej: MIX-BERRIES-500)"
+              value={bomTest.skuProductoFinal}
+              onChange={(e) => setBomTest({...bomTest, skuProductoFinal: e.target.value.toUpperCase()})}
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="SKU Material (ej: MP-FRUTILLA-001)"
+              value={bomTest.skuMaterial}
+              onChange={(e) => setBomTest({...bomTest, skuMaterial: e.target.value.toUpperCase()})}
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="number"
+              placeholder="Cantidad por unidad"
+              value={bomTest.cantPorUnidad}
+              onChange={(e) => setBomTest({...bomTest, cantPorUnidad: e.target.value})}
+            />
+          </div>
+          <button type="submit">➕ Crear BOM</button>
+          <button type="button" onClick={handleGetBom} style={{ marginLeft: '10px' }}>🔍 Ver BOM</button>
+        </form>
+
+        {bomResults.length > 0 && (
+          <div>
+            <h4>BOM de {bomTest.skuProductoFinal}:</h4>
+            <table style={{ width: '100%', marginTop: '10px' }}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Material</th>
+                  <th>Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bomResults.map((bom, index) => (
+                  <tr key={index}>
+                    <td>{bom.idBom}</td>
+                    <td>{bom.skuMaterial}</td>
+                    <td>{bom.canPorUnidad}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
