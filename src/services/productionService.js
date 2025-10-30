@@ -10,7 +10,7 @@ class ProductionService {
     await this.delay();
     
     try {
-      // PAYLOAD: Solo estos datos se envían al backend
+      // PAYLOAD: Solo estos datos se envían al backend 
       const payload = {
         sku: orderData.sku,                           // SKU del producto
         cantidad: orderData.cantidad,                 // Cantidad fija del lote
@@ -48,7 +48,7 @@ class ProductionService {
     }
   }
 
-  // Obtener productos disponibles
+  //Simulacion de: Obtener productos disponibles que haya en la base de datos
   static async getAvailableProducts() {
     await this.delay();
     
