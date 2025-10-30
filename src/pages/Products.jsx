@@ -18,6 +18,14 @@ const Products = () => {
   const [newCategory, setNewCategory] = useState({ nombre: '', descripcion: '' });
   const [showCategoryForm, setShowCategoryForm] = useState(false);
 
+  // --- Estados para filtros ---
+  const [filtros, setFiltros] = useState({
+    busqueda: '',
+    categoria: '',
+    unidadMedida: '',
+    tipoProducto: '' // 'materia-prima', 'producto-final', ''
+  });
+
   // 🔗 CONECTADO AL BACKEND
   useEffect(() => {
     loadProducts();
@@ -45,6 +53,19 @@ const Products = () => {
       console.error('Error cargando categorías:', error);
     }
   };
+
+  // --- Función para obtener nombre de categoría por ID ---
+  const getNombreCategoria = (idCategoria) => {
+    // Mapeo básico basado en los datos que insertaste
+    const mapeoCategoria = {
+      1: 'Materia Prima',
+      2: 'Producto Final'
+    };
+    return mapeoCategoria[idCategoria] || `Categoría ${idCategoria}`;
+  };
+
+  // --- Obtener categorías únicas de los productos ---
+  const categoriasDeProductos = [...new Set(productos.map(p => getNombreCategoria(p.idCategoria)))].filter(Boolean);
 
   // --- Función para crear categoría ---
   const handleCreateCategory = async (e) => {
@@ -126,6 +147,39 @@ const Products = () => {
       }
     }
   };
+
+  // --- Función para filtrar productos ---
+  const productosFiltrados = productos.filter(producto => {
+    const cumpleBusqueda = !filtros.busqueda || 
+      producto.sku.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
+      producto.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
+      producto.descripcion.toLowerCase().includes(filtros.busqueda.toLowerCase());
+    
+    const cumpleCategoria = !filtros.categoria || 
+      getNombreCategoria(producto.idCategoria) === filtros.categoria;
+    
+    const cumpleUnidad = !filtros.unidadMedida || 
+      producto.unidadMedida === filtros.unidadMedida;
+    
+    const cumpleTipo = !filtros.tipoProducto || 
+      (filtros.tipoProducto === 'materia-prima' && producto.sku.startsWith('MP-')) ||
+      (filtros.tipoProducto === 'producto-final' && !producto.sku.startsWith('MP-'));
+    
+    return cumpleBusqueda && cumpleCategoria && cumpleUnidad && cumpleTipo;
+  });
+
+  // --- Función para limpiar filtros ---
+  const limpiarFiltros = () => {
+    setFiltros({
+      busqueda: '',
+      categoria: '',
+      unidadMedida: '',
+      tipoProducto: ''
+    });
+  };
+
+  // --- Obtener unidades de medida únicas ---
+  const unidadesMedida = [...new Set(productos.map(p => p.unidadMedida))].filter(Boolean);
 
   return (
     <div className="product-create-container">
@@ -298,13 +352,16 @@ const Products = () => {
           <small style={{ color: '#856404', marginTop: '8px', display: 'block' }}>
             💡 Sugerencia: Usa prefijos como MP- para materias primas, MIX- para mezclas, etc.
           </small>
+          <small style={{ color: '#856404', marginTop: '4px', display: 'block' }}>
+            🔍 Puedes usar estos SKUs en los filtros de búsqueda de la tabla de abajo.
+          </small>
         </div>
       )}
 
       {/* --- LISTA DE PRODUCTOS CREADOS --- */}
       <div className="products-list card" style={{ marginTop: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>📦 Productos en la Base de Datos</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3>📦 Productos en la Base de Datos ({productosFiltrados.length} de {productos.length})</h3>
           <button 
             onClick={loadProducts}
             style={{ background: '#17a2b8', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}
@@ -312,41 +369,175 @@ const Products = () => {
             🔄 Recargar
           </button>
         </div>
+
+        {/* Filtros */}
+        <div className="filtros-container" style={{ 
+          background: '#f8f9fa', 
+          padding: '15px', 
+          borderRadius: '8px', 
+          marginBottom: '20px',
+          border: '1px solid #dee2e6'
+        }}>
+          <h4 style={{ margin: '0 0 15px 0', color: '#495057' }}>🔍 Filtros de Búsqueda</h4>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+            {/* Búsqueda general */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>Búsqueda general</label>
+              <input
+                type="text"
+                placeholder="Buscar por SKU, nombre o descripción..."
+                value={filtros.busqueda}
+                onChange={(e) => setFiltros({...filtros, busqueda: e.target.value})}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
+              />
+            </div>
+
+            {/* Filtro por categoría */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>Categoría</label>
+              <select
+                value={filtros.categoria}
+                onChange={(e) => setFiltros({...filtros, categoria: e.target.value})}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
+              >
+                <option value="">Todas las categorías</option>
+                {categoriasDeProductos.map((cat, index) => (
+                  <option key={index} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por unidad de medida */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>Unidad de medida</label>
+              <select
+                value={filtros.unidadMedida}
+                onChange={(e) => setFiltros({...filtros, unidadMedida: e.target.value})}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
+              >
+                <option value="">Todas las unidades</option>
+                {unidadesMedida.map((unidad, index) => (
+                  <option key={index} value={unidad}>{unidad}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por tipo de producto */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>Tipo de producto</label>
+              <select
+                value={filtros.tipoProducto}
+                onChange={(e) => setFiltros({...filtros, tipoProducto: e.target.value})}
+                style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
+              >
+                <option value="">Todos los tipos</option>
+                <option value="materia-prima">🌱 Materias Primas (MP-)</option>
+                <option value="producto-final">📦 Productos Finales</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Botón limpiar filtros */}
+          <div style={{ marginTop: '15px', textAlign: 'right' }}>
+            <button
+              onClick={limpiarFiltros}
+              style={{ 
+                background: '#6c757d', 
+                color: 'white', 
+                border: 'none', 
+                padding: '8px 16px', 
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              🧹 Limpiar Filtros
+            </button>
+          </div>
+        </div>
         
         {loading ? (
           <p>🔄 Cargando productos...</p>
         ) : productos.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Unidad</th>
-                <th>Categoría</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productos.map((p, index) => (
-                <tr key={index}>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#007bff' }}>{p.sku}</td>
-                  <td>{p.nombre}</td>
-                  <td>{p.descripcion}</td>
-                  <td>{p.unidadMedida}</td>
-                  <td>{p.idCategoria}</td>
-                  <td>
-                    <button 
-                      onClick={() => eliminarProducto(p.sku)}
-                      style={{ background: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px' }}
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          productosFiltrados.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#e9ecef' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>SKU</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Nombre</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Descripción</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Unidad</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Categoría</th>
+                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Tipo</th>
+                    <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {productosFiltrados.map((p, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #dee2e6' }}>
+                      <td style={{ 
+                        padding: '12px', 
+                        fontFamily: 'monospace', 
+                        fontWeight: 'bold', 
+                        color: p.sku.startsWith('MP-') ? '#28a745' : '#007bff'
+                      }}>
+                        {p.sku.startsWith('MP-') && '🌱 '}{p.sku}
+                      </td>
+                      <td style={{ padding: '12px' }}>{p.nombre}</td>
+                      <td style={{ padding: '12px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.descripcion}</td>
+                      <td style={{ padding: '12px' }}>{p.unidadMedida}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          background: p.idCategoria === 1 ? '#d4edda' : '#e2e3e5',
+                          color: p.idCategoria === 1 ? '#155724' : '#383d41'
+                        }}>
+                          {getNombreCategoria(p.idCategoria)}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          background: p.sku.startsWith('MP-') ? '#d4edda' : '#d1ecf1',
+                          color: p.sku.startsWith('MP-') ? '#155724' : '#0c5460'
+                        }}>
+                          {p.sku.startsWith('MP-') ? 'Materia Prima' : 'Producto Final'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <button 
+                          onClick={() => eliminarProducto(p.sku)}
+                          style={{ 
+                            background: '#dc3545', 
+                            color: 'white', 
+                            border: 'none', 
+                            padding: '6px 12px', 
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ padding: '20px', background: '#fff3cd', borderRadius: '5px', textAlign: 'center', border: '1px solid #ffeaa7' }}>
+              <p>🔍 <strong>No se encontraron productos con los filtros aplicados</strong></p>
+              <p>Intenta ajustar los criterios de búsqueda o limpiar los filtros.</p>
+            </div>
+          )
         ) : (
           <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '5px', textAlign: 'center' }}>
             <p>📊 <strong>No hay productos creados</strong></p>
