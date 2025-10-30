@@ -55,6 +55,12 @@ const Orders = () => {
   ]);
 
   const [filter, setFilter] = useState('all');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const getStatusBadge = (status, type) => {
     const statusConfig = {
@@ -87,8 +93,26 @@ const Orders = () => {
     ));
   };
 
-  const filteredOrders = filter === 'all' ? orders : 
-    orders.filter(order => order.shippingStatus === filter);
+  const filteredOrders = orders.filter(order => {
+    const matchesShipping = filter === 'all' || order.shippingStatus === filter;
+    const matchesSearch = order.client.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                         order.id.toLowerCase().includes(searchFilter.toLowerCase());
+    const matchesDate = !dateFilter || order.date === dateFilter;
+    const matchesPriority = priorityFilter === 'all' || order.priority === priorityFilter;
+    const matchesPayment = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
+    return matchesShipping && matchesSearch && matchesDate && matchesPriority && matchesPayment;
+  }).sort((a, b) => {
+    let aValue = a[sortBy];
+    let bValue = b[sortBy];
+    
+    if (sortBy === 'total') {
+      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+    if (sortBy === 'date') {
+      return sortOrder === 'asc' ? new Date(aValue) - new Date(bValue) : new Date(bValue) - new Date(aValue);
+    }
+    return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+  });
 
   const metrics = {
     total: orders.length,
@@ -182,52 +206,126 @@ const Orders = () => {
         </button>
       </div>
 
+      <div className="advanced-filters" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '5px' }}>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="🔍 Buscar cliente o ID..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minWidth: '200px' }}
+          />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          />
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          >
+            <option value="all">Todas las prioridades</option>
+            <option value="low">Baja</option>
+            <option value="normal">Normal</option>
+            <option value="high">Alta</option>
+            <option value="urgent">Urgente</option>
+          </select>
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          >
+            <option value="all">Todos los pagos</option>
+            <option value="paid">Pagado</option>
+            <option value="pending">Pendiente</option>
+            <option value="overdue">Vencido</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          >
+            <option value="date">Ordenar por fecha</option>
+            <option value="client">Ordenar por cliente</option>
+            <option value="total">Ordenar por total</option>
+            <option value="priority">Ordenar por prioridad</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
+      </div>
+
       <div className="orders-table card">
-        <table>
-          <thead>
-            <tr>
-              <th>ID Pedido</th>
-              <th>Cliente</th>
-              <th>Fecha</th>
-              <th>Productos</th>
-              <th>Total</th>
-              <th>Pago</th>
-              <th>Envío</th>
-              <th>Prioridad</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.map((order) => (
-              <tr key={order.id}>
-                <td className="order-id">{order.id}</td>
-                <td>{order.client}</td>
-                <td>{new Date(order.date).toLocaleDateString('es-ES')}</td>
-                <td className="products-cell">{order.products}</td>
-                <td className="total-cell">${order.total.toLocaleString()}</td>
-                <td>{getStatusBadge(order.paymentStatus, 'payment')}</td>
-                <td>{getStatusBadge(order.shippingStatus, 'shipping')}</td>
-                <td>{getStatusBadge(order.priority, 'priority')}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="action-btn view"
-                      onClick={() => alert(`Ver detalles de ${order.id}`)}
-                    >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button 
-                      className="action-btn edit"
-                      onClick={() => alert(`Editar ${order.id}`)}
-                    >
-                      <i className="fas fa-edit"></i>
-                    </button>
-                  </div>
-                </td>
+        {filteredOrders.length > 0 ? (
+          <table>
+            <thead>
+              <tr>
+                <th>ID Pedido</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Productos</th>
+                <th>Total</th>
+                <th>Pago</th>
+                <th>Envío</th>
+                <th>Prioridad</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredOrders.map((order) => (
+                <tr key={order.id}>
+                  <td className="order-id">{order.id}</td>
+                  <td>{order.client}</td>
+                  <td>{new Date(order.date).toLocaleDateString('es-ES')}</td>
+                  <td className="products-cell">{order.products}</td>
+                  <td className="total-cell">${order.total.toLocaleString()}</td>
+                  <td>{getStatusBadge(order.paymentStatus, 'payment')}</td>
+                  <td>{getStatusBadge(order.shippingStatus, 'shipping')}</td>
+                  <td>{getStatusBadge(order.priority, 'priority')}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="action-btn view"
+                        onClick={() => alert(`Ver detalles de ${order.id}`)}
+                      >
+                        <i className="fas fa-eye"></i>
+                      </button>
+                      <button 
+                        className="action-btn edit"
+                        onClick={() => alert(`Editar ${order.id}`)}
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+            <i className="fas fa-search" style={{ fontSize: '48px', marginBottom: '16px' }}></i>
+            <p>No se encontraron pedidos con los filtros aplicados</p>
+            <button 
+              onClick={() => {
+                setFilter('all');
+                setSearchFilter('');
+                setDateFilter('');
+                setPriorityFilter('all');
+                setPaymentFilter('all');
+              }}
+              style={{ padding: '8px 16px', marginTop: '10px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

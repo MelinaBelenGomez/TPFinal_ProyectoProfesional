@@ -5,6 +5,12 @@ const Production = ({ user }) => {
   const [productionOrders, setProductionOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [productFilter, setProductFilter] = useState('');
+  const [orderFilter, setOrderFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+  const [sortBy, setSortBy] = useState('fecha_creacion');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   // Cargar productos desde el service
   useEffect(() => {
@@ -136,12 +142,26 @@ const Production = ({ user }) => {
       </div>
 
       <div className="products-grid">
-        <h3>Selecciona el tipo de producto a producir:</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3>Selecciona el tipo de producto a producir:</h3>
+          <input
+            type="text"
+            placeholder="🔍 Buscar producto..."
+            value={productFilter}
+            onChange={(e) => setProductFilter(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minWidth: '200px' }}
+          />
+        </div>
         <div className="product-cards">
           {loading ? (
             <div className="loading-message">Cargando productos...</div>
           ) : (
-            products.map((product) => (
+            products
+              .filter(product => 
+                product.name.toLowerCase().includes(productFilter.toLowerCase()) ||
+                product.sku.toLowerCase().includes(productFilter.toLowerCase())
+              )
+              .map((product) => (
             <div key={product.sku} className="product-card card">
               <div className="product-header" style={{ backgroundColor: product.color }}>
                 <i className={product.icon}></i>
@@ -173,7 +193,50 @@ const Production = ({ user }) => {
 
       {productionOrders.length > 0 && (
         <div className="orders-list card">
-          <h3>Órdenes de Producción Creadas</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h3>Órdenes de Producción Creadas</h3>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="🔍 Buscar orden..."
+                value={orderFilter}
+                onChange={(e) => setOrderFilter(e.target.value)}
+                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="CREADA">CREADA</option>
+                <option value="EN_PROCESO">EN_PROCESO</option>
+                <option value="TERMINADA">TERMINADA</option>
+              </select>
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+              />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
+              >
+                <option value="fecha_creacion">Por fecha</option>
+                <option value="codigo">Por código</option>
+                <option value="sku">Por SKU</option>
+                <option value="cantidad">Por cantidad</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+          </div>
           <table>
             <thead>
               <tr>
@@ -187,7 +250,28 @@ const Production = ({ user }) => {
               </tr>
             </thead>
             <tbody>
-              {productionOrders.map((order) => (
+              {productionOrders
+                .filter(order => {
+                  const matchesSearch = order.codigo.toLowerCase().includes(orderFilter.toLowerCase()) ||
+                                      order.sku.toLowerCase().includes(orderFilter.toLowerCase()) ||
+                                      order.producto.name.toLowerCase().includes(orderFilter.toLowerCase());
+                  const matchesStatus = statusFilter === 'all' || order.estado === statusFilter;
+                  const matchesDate = !dateFilter || order.fecha_creacion.startsWith(dateFilter);
+                  return matchesSearch && matchesStatus && matchesDate;
+                })
+                .sort((a, b) => {
+                  let aValue = a[sortBy];
+                  let bValue = b[sortBy];
+                  
+                  if (sortBy === 'cantidad') {
+                    return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+                  }
+                  if (sortBy === 'fecha_creacion') {
+                    return sortOrder === 'asc' ? new Date(aValue) - new Date(bValue) : new Date(bValue) - new Date(aValue);
+                  }
+                  return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                })
+                .map((order) => (
                 <tr key={order.id_op}>
                   <td className="order-code">{order.codigo}</td>
                   <td className="sku-code">{order.sku}</td>

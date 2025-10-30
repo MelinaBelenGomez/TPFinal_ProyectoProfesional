@@ -8,6 +8,11 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [searchFilter, setSearchFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('username');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [newUser, setNewUser] = useState({
     username: '',
     email: '',
@@ -157,6 +162,54 @@ const Settings = () => {
           </button>
         </div>
 
+        <div className="filters-section" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '5px' }}>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar usuario, nombre o email..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minWidth: '250px' }}
+            />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="all">Todos los roles</option>
+              {UserManagementService.getRoles().map(role => (
+                <option key={role.value} value={role.value}>{role.label}</option>
+              ))}
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="all">Todos los estados</option>
+              <option value="ACTIVO">ACTIVO</option>
+              <option value="INACTIVO">INACTIVO</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="username">Por usuario</option>
+              <option value="nombre">Por nombre</option>
+              <option value="email">Por email</option>
+              <option value="role">Por rol</option>
+              <option value="ultimo_acceso">Por último acceso</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
+        </div>
+
         <div className="users-table">
           <table>
             <thead>
@@ -171,7 +224,33 @@ const Settings = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map(user => (
+              {users
+                .filter(user => {
+                  const matchesSearch = user.username.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                                      user.nombre.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                                      user.apellido.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                                      user.email.toLowerCase().includes(searchFilter.toLowerCase());
+                  const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+                  const matchesStatus = statusFilter === 'all' || user.estado === statusFilter;
+                  return matchesSearch && matchesRole && matchesStatus;
+                })
+                .sort((a, b) => {
+                  let aValue = a[sortBy];
+                  let bValue = b[sortBy];
+                  
+                  if (sortBy === 'ultimo_acceso') {
+                    if (!aValue && !bValue) return 0;
+                    if (!aValue) return sortOrder === 'asc' ? 1 : -1;
+                    if (!bValue) return sortOrder === 'asc' ? -1 : 1;
+                    return sortOrder === 'asc' ? new Date(aValue) - new Date(bValue) : new Date(bValue) - new Date(aValue);
+                  }
+                  if (sortBy === 'nombre') {
+                    aValue = `${a.nombre} ${a.apellido}`;
+                    bValue = `${b.nombre} ${b.apellido}`;
+                  }
+                  return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                })
+                .map(user => (
                 <tr key={user.id}>
                   <td className="username-cell">{user.username}</td>
                   <td>{user.nombre} {user.apellido}</td>
@@ -226,6 +305,30 @@ const Settings = () => {
               ))}
             </tbody>
           </table>
+          {users.filter(user => {
+            const matchesSearch = user.username.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                                user.nombre.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                                user.apellido.toLowerCase().includes(searchFilter.toLowerCase()) ||
+                                user.email.toLowerCase().includes(searchFilter.toLowerCase());
+            const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+            const matchesStatus = statusFilter === 'all' || user.estado === statusFilter;
+            return matchesSearch && matchesRole && matchesStatus;
+          }).length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <i className="fas fa-search" style={{ fontSize: '48px', marginBottom: '16px' }}></i>
+              <p>No se encontraron usuarios con los filtros aplicados</p>
+              <button 
+                onClick={() => {
+                  setSearchFilter('');
+                  setRoleFilter('all');
+                  setStatusFilter('all');
+                }}
+                style={{ padding: '8px 16px', marginTop: '10px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

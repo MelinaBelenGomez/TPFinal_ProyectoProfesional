@@ -7,6 +7,9 @@ const Infrastructure = () => {
   const [loading, setLoading] = useState(false);
   const [newCentro, setNewCentro] = useState({ sucursal: '', descripcion: '' });
   const [newAlmacen, setNewAlmacen] = useState({ nombre: '', capacidad: '', estado: 'ACTIVO', idCentro: '' });
+  const [centroFilter, setCentroFilter] = useState('');
+  const [almacenFilter, setAlmacenFilter] = useState('');
+  const [estadoFilter, setEstadoFilter] = useState('all');
 
   useEffect(() => {
     loadCentros();
@@ -106,18 +109,32 @@ const Infrastructure = () => {
           <p>🔄 Cargando centros...</p>
         ) : (
           <div>
-            <h4>Centros disponibles:</h4>
-            {centros.length > 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h4>Centros disponibles:</h4>
+              <input
+                type="text"
+                placeholder="🔍 Buscar por sucursal..."
+                value={centroFilter}
+                onChange={(e) => setCentroFilter(e.target.value)}
+                style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ccc' }}
+              />
+            </div>
+            {centros.filter(centro => 
+              centro.sucursal.toLowerCase().includes(centroFilter.toLowerCase())
+            ).length > 0 ? (
               <table style={{ width: '100%' }}>
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Sucursal</th>
-                    <th>Descripción</th>
+                    <th style={{ cursor: 'pointer' }}>ID</th>
+                    <th style={{ cursor: 'pointer' }}>Sucursal</th>
+                    <th style={{ cursor: 'pointer' }}>Descripción</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {centros.map((centro) => (
+                  {centros
+                    .filter(centro => centro.sucursal.toLowerCase().includes(centroFilter.toLowerCase()))
+                    .sort((a, b) => a.sucursal.localeCompare(b.sucursal))
+                    .map((centro) => (
                     <tr key={centro.idCentro}>
                       <td>{centro.idCentro}</td>
                       <td>🏢 {centro.sucursal}</td>
@@ -192,20 +209,50 @@ const Infrastructure = () => {
         )}
 
         <div>
-          <h4>Almacenes disponibles:</h4>
-          {almacenes.length > 0 ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
+            <h4>Almacenes disponibles:</h4>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Buscar almacén..."
+                value={almacenFilter}
+                onChange={(e) => setAlmacenFilter(e.target.value)}
+                style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ccc' }}
+              />
+              <select
+                value={estadoFilter}
+                onChange={(e) => setEstadoFilter(e.target.value)}
+                style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ccc' }}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="INACTIVO">INACTIVO</option>
+              </select>
+            </div>
+          </div>
+          {almacenes
+            .filter(almacen => 
+              almacen.nombre.toLowerCase().includes(almacenFilter.toLowerCase()) &&
+              (estadoFilter === 'all' || almacen.estado === estadoFilter)
+            ).length > 0 ? (
             <table style={{ width: '100%' }}>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Capacidad</th>
-                  <th>Estado</th>
-                  <th>Centro</th>
+                  <th style={{ cursor: 'pointer' }}>ID</th>
+                  <th style={{ cursor: 'pointer' }}>Nombre</th>
+                  <th style={{ cursor: 'pointer' }}>Capacidad</th>
+                  <th style={{ cursor: 'pointer' }}>Estado</th>
+                  <th style={{ cursor: 'pointer' }}>Centro</th>
                 </tr>
               </thead>
               <tbody>
-                {almacenes.map((almacen) => (
+                {almacenes
+                  .filter(almacen => 
+                    almacen.nombre.toLowerCase().includes(almacenFilter.toLowerCase()) &&
+                    (estadoFilter === 'all' || almacen.estado === estadoFilter)
+                  )
+                  .sort((a, b) => a.nombre.localeCompare(b.nombre))
+                  .map((almacen) => (
                   <tr key={almacen.idAlmacen}>
                     <td>{almacen.idAlmacen}</td>
                     <td>🏪 {almacen.nombre}</td>
