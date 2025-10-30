@@ -423,6 +423,7 @@ class ProductionServiceAxios {
               codigo: stock.sku,
               nombre: product.nombre,
               categoria: product.idCategoria || 'Sin categoría',
+              cantidad: stock.cantidad || stock.stockTotal,
               stock_actual: stock.stockTotal,
               stock_disponible: stock.stockDisponible,
               stock_reservado: stock.stockReservado,
