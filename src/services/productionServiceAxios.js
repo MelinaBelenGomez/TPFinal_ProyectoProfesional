@@ -230,6 +230,78 @@ class ProductionServiceAxios {
       };
     }
   }
+
+  // 🔗 CONECTADO AL BACKEND: Obtener centros de producción
+  static async getCentros() {
+    try {
+      const response = await axios.get(`${this.baseURL}/centros-produccion`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener centros'
+      };
+    }
+  }
+
+  // 🔗 CONECTADO AL BACKEND: Crear centro de producción
+  static async createCentro(centroData) {
+    try {
+      await axios.post(`${this.baseURL}/centros-produccion`, {
+        sucursal: centroData.sucursal,
+        descripcion: centroData.descripcion
+      });
+      return {
+        success: true,
+        message: 'Centro de producción creado exitosamente'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al crear centro de producción'
+      };
+    }
+  }
+
+  // 🔗 CONECTADO AL BACKEND: Obtener almacenes
+  static async getAlmacenes() {
+    try {
+      const response = await axios.get(`${this.baseURL}/almacenes`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener almacenes'
+      };
+    }
+  }
+
+  // 🔗 CONECTADO AL BACKEND: Crear almacén
+  static async createAlmacen(almacenData) {
+    try {
+      await axios.post(`${this.baseURL}/almacenes`, {
+        nombre: almacenData.nombre,
+        capacidad: almacenData.capacidad,
+        estado: almacenData.estado,
+        idCentro: almacenData.idCentro
+      });
+      return {
+        success: true,
+        message: 'Almacén creado exitosamente'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al crear almacén'
+      };
+    }
+  }
 }
 
 export default ProductionServiceAxios;
