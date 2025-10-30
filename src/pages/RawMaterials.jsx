@@ -26,6 +26,7 @@ const RawMaterials = () => {
     categoria: '',
     descripcion: '',
     stock_inicial: '',
+    cantidad_minima: '',
     unidad: 'kg',
     idAlmacen: ''
   });
@@ -74,6 +75,7 @@ const RawMaterials = () => {
         categoria: '',
         descripcion: '',
         stock_inicial: '',
+        cantidad_minima: '',
         unidad: 'kg',
         idAlmacen: ''
       });
@@ -275,6 +277,16 @@ const RawMaterials = () => {
                     value={newMaterial.stock_inicial}
                     onChange={(e) => setNewMaterial({...newMaterial, stock_inicial: e.target.value})}
                     required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Cantidad Mínima:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newMaterial.cantidad_minima || ''}
+                    onChange={(e) => setNewMaterial({...newMaterial, cantidad_minima: e.target.value})}
+                    placeholder="0"
                   />
                 </div>
                 <div className="form-group">

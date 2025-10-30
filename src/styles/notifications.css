@@ -167,6 +167,20 @@
   line-height: 1.2;
 }
 
+.alert-detail {
+  margin-bottom: 0.1rem !important;
+}
+
+.stock-info {
+  margin-top: 0.3rem !important;
+  font-weight: 500;
+}
+
+.stock-low {
+  color: #dc3545;
+  font-weight: bold;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .notification-dropdown {

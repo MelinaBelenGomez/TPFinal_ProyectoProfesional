@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import RawMaterialService from '../services/rawMaterialService';
+import ProductionServiceAxios from '../services/productionServiceAxios';
 
 const NotificationBell = () => {
   const [alerts, setAlerts] = useState([]);
@@ -14,9 +14,24 @@ const NotificationBell = () => {
 
   const loadAlerts = async () => {
     setLoading(true);
-    const response = await RawMaterialService.getLowStockAlerts();
-    if (response.success) {
-      setAlerts(response.data);
+    try {
+      const response = await ProductionServiceAxios.getRawMaterialsWithStock();
+      if (response.success) {
+        console.log('Datos de materiales:', response.data);
+        
+        // Filtrar materiales con stock bajo usando stock_disponible
+        const lowStockMaterials = response.data.filter(material => {
+          const isLowStock = material.stock_disponible <= material.stock_minimo && material.stock_minimo > 0;
+          console.log(`${material.nombre}: disponible=${material.stock_disponible}, minimo=${material.stock_minimo}, alerta=${isLowStock}`);
+          return isLowStock;
+        });
+        
+        console.log('Materiales con stock bajo:', lowStockMaterials);
+        setAlerts(lowStockMaterials);
+      }
+    } catch (error) {
+      console.error('Error cargando alertas:', error);
+      setAlerts([]);
     }
     setLoading(false);
   };
@@ -41,12 +56,21 @@ const NotificationBell = () => {
         <div className="notification-dropdown">
           <div className="notification-header">
             <h4>Alertas de Stock</h4>
-            <button 
-              className="close-dropdown"
-              onClick={() => setShowDropdown(false)}
-            >
-              ×
-            </button>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button 
+                onClick={loadAlerts}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007bff' }}
+                title="Recargar alertas"
+              >
+                <i className="fas fa-sync-alt"></i>
+              </button>
+              <button 
+                className="close-dropdown"
+                onClick={() => setShowDropdown(false)}
+              >
+                ×
+              </button>
+            </div>
           </div>
           
           <div className="notification-content">
@@ -69,8 +93,12 @@ const NotificationBell = () => {
                     </div>
                     <div className="alert-info">
                       <strong>{alert.nombre}</strong>
-                      <p>Stock: {alert.stock_actual} {alert.unidad}</p>
-                      <p>Mínimo: {alert.stock_minimo} {alert.unidad}</p>
+                      <p className="alert-detail">SKU: {alert.codigo}</p>
+                      <p className="alert-detail">Almacén: {alert.almacen}</p>
+                      <p className="stock-info">
+                        Stock: <span className="stock-low">{alert.stock_actual}</span> / 
+                        Mínimo: {alert.stock_minimo} {alert.unidad}
+                      </p>
                     </div>
                   </div>
                 ))}

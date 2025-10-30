@@ -325,7 +325,16 @@ class ProductionServiceAxios {
         idAlmacen: materialData.idAlmacen
       });
       
-      // 3. Agregar stock inicial
+      // 3. Establecer cantidad mínima si se especifica
+      if (materialData.cantidad_minima > 0) {
+        await axios.put(`${this.baseURL}/stock/actualizar-minimo`, {
+          sku: materialData.codigo,
+          idAlmacen: materialData.idAlmacen,
+          cantidad: materialData.cantidad_minima
+        });
+      }
+      
+      // 4. Agregar stock inicial
       if (materialData.stock_inicial > 0) {
         await axios.put(`${this.baseURL}/stock/incrementar`, {
           sku: materialData.codigo,
