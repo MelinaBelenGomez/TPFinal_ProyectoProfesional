@@ -4,13 +4,13 @@ import EmployeeDashboard from '../components/EmployeeDashboard';
 import ProductsTable from '../components/ProductsTable';
 import ProductForm from '../components/ProductForm';
 import Reports from '../pages/Reports';
-import Orders from '../pages/Orders';
+//import Orders from '../pages/Orders';
 import Production from '../pages/Production';
 import WorkStation from '../components/WorkStation';
 import Products from "../pages/Products";
 import RawMaterials from '../pages/RawMaterials';
 import Settings from '../pages/Settings';
-import Clients from '../pages/Clients';
+//import Clients from '../pages/Clients';
 import TestBackend from '../pages/TestBackend';
 import Infrastructure from '../pages/Infrastructure';
 
@@ -26,11 +26,11 @@ const AppRoutes = ({ user }) => {
           </>
         } />
         <Route path="/reports" element={<Reports />} />
-        <Route path="/orders" element={<Orders />} />
+        {/*<Route path="/orders" element={<Orders />} />*/}
         <Route path="/production" element={<Production user={user} />} />
         <Route path="/products" element={<Products />} />
         <Route path="/raw-materials" element={<RawMaterials />} />
-        <Route path="/clients" element={<Clients />} />
+        {/*<Route path="/clients" element={<Clients />} />*/}
         <Route path="/settings" element={<Settings />} />
         <Route path="/infrastructure" element={<Infrastructure />} />
         <Route path="/test-backend" element={<TestBackend />} />
