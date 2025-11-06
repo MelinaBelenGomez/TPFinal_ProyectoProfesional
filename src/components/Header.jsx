@@ -19,13 +19,11 @@ const Header = ({ onLogout, user }) => {
     if (user?.role === 'admin') {
       return [
         { icon: 'fas fa-home', text: 'Inicio', path: '/' },
+        { icon: 'fas fa-building', text: 'Centros y Almacenes', path: '/infrastructure' },
         { icon: 'fas fa-box', text: 'Productos', path: '/products' },
         { icon: 'fas fa-seedling', text: 'Materia Prima', path: '/raw-materials' },
-        /*{{ icon: 'fas fa-users', text: 'Clientes', path: '/clients' },}*/
-        /*{{ icon: 'fas fa-shopping-cart', text: 'Pedidos', path: '/orders' },*/
         { icon: 'fas fa-industry', text: 'Producción', path: '/production' },
         { icon: 'fas fa-chart-bar', text: 'Reportes', path: '/reports' },
-        { icon: 'fas fa-building', text: 'Infraestructura', path: '/infrastructure' },
         { icon: 'fas fa-cog', text: 'Configuración', path: '/settings' },
         { icon: 'fas fa-plug', text: 'Test Backend', path: '/test-backend' }
       ];
