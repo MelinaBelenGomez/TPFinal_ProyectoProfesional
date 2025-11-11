@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import ProductionService from '../services/productionService';
+import axios from 'axios';
 
 const Production = ({ user }) => {
   const [productionOrders, setProductionOrders] = useState([]);
@@ -9,95 +9,160 @@ const Production = ({ user }) => {
   const [orderFilter, setOrderFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
-  const [sortBy, setSortBy] = useState('fecha_creacion');
+  const [sortBy, setSortBy] = useState('idOp');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [selectedQuantities, setSelectedQuantities] = useState({});
 
-  // Cargar productos desde el service
+  // Cargar productos y órdenes al iniciar
   useEffect(() => {
     loadProducts();
+    loadProductionOrders();
   }, []);
 
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const response = await ProductionService.getAvailableProducts();
-      if (response.success) {
-        // Mapear productos del backend con iconos y colores para UI
-        const productsWithUI = response.data.map(product => ({
-          ...product,
-          name: product.nombre,
-          description: product.descripcion,
-          cantidadFija: product.cantidad_por_lote,
-          unidadMedida: product.unidad_medida,
-          // Iconos y colores para UI
-          icon: getProductIcon(product.sku),
-          color: getProductColor(product.sku)
-        }));
-        setProducts(productsWithUI);
-      }
+      // Obtener productos que tienen BOM (productos fabricables)
+      const response = await axios.get('http://localhost:8081/bom/productos-fabricables');
+      const productsWithUI = response.data.map(product => ({
+        ...product,
+        name: product.nombre,
+        description: product.descripcion || 'Producto congelado',
+        unidadMedida: product.unidadMedida || 'unidades',
+        icon: getProductIcon(product.sku),
+        color: getProductColor(product.sku)
+      }));
+      setProducts(productsWithUI);
+      
+      // Inicializar cantidades por defecto
+      const initialQuantities = {};
+      productsWithUI.forEach(product => {
+        initialQuantities[product.sku] = 100; // Cantidad por defecto
+      });
+      setSelectedQuantities(initialQuantities);
     } catch (error) {
       console.error('Error cargando productos:', error);
+      console.error('Detalles del error:', error.response?.data || error.message);
+      alert(`Error al cargar productos fabricables: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadProductionOrders = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/ordenes-produccion/consultar/todas');
+      setProductionOrders(response.data);
+    } catch (error) {
+      console.error('Error cargando órdenes:', error);
+    }
+  };
+
   const getProductIcon = (sku) => {
+    // Iconos más estéticos para productos
     const iconMap = {
       'FRZ-MIX-BER-001': 'fas fa-seedling',
       'FRZ-MIX-TRP-002': 'fas fa-leaf',
-      'FRZ-PLP-BER-003': 'fas fa-blender',
-      'FRZ-PLP-TRP-004': 'fas fa-blender',
+      'FRZ-PLP-BER-003': 'fas fa-apple-alt',
+      'FRZ-PLP-TRP-004': 'fas fa-lemon',
       'FRZ-HRT-MIX-005': 'fas fa-carrot',
-      'FRZ-SOP-CMB-006': 'fas fa-soup'
+      'FRZ-SOP-CMB-006': 'fas fa-pepper-hot'
     };
-    return iconMap[sku] || 'fas fa-box';
+    
+    // Iconos por categorías de productos
+    const categoryIcons = [
+      'fas fa-apple-alt',    // Manzana
+      'fas fa-lemon',        // Limón
+      'fas fa-carrot',       // Zanahoria
+      'fas fa-pepper-hot',   // Pimiento
+      'fas fa-seedling',     // Planta
+      'fas fa-leaf',         // Hoja
+      'fas fa-tree',         // Árbol
+      'fas fa-cannabis',     // Planta (alternativa)
+      'fas fa-spa'           // Spa/natural
+    ];
+    
+    // Si no hay mapeo específico, usar uno aleatorio basado en el SKU
+    if (iconMap[sku]) {
+      return iconMap[sku];
+    }
+    
+    // Generar índice basado en el SKU para consistencia
+    const skuHash = sku.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return categoryIcons[skuHash % categoryIcons.length];
   };
 
   const getProductColor = (sku) => {
     const colorMap = {
-      'FRZ-MIX-BER-001': '#8e44ad',
-      'FRZ-MIX-TRP-002': '#f39c12',
-      'FRZ-PLP-BER-003': '#e74c3c',
-      'FRZ-PLP-TRP-004': '#f1c40f',
-      'FRZ-HRT-MIX-005': '#27ae60',
-      'FRZ-SOP-CMB-006': '#d35400'
+      'FRZ-MIX-BER-001': '#8e44ad',  // Púrpura (berries)
+      'FRZ-MIX-TRP-002': '#f39c12',  // Naranja (tropical)
+      'FRZ-PLP-BER-003': '#e74c3c',  // Rojo (berries)
+      'FRZ-PLP-TRP-004': '#f1c40f',  // Amarillo (tropical)
+      'FRZ-HRT-MIX-005': '#27ae60',  // Verde (vegetales)
+      'FRZ-SOP-CMB-006': '#d35400'   // Naranja oscuro (sopa)
     };
-    return colorMap[sku] || '#6c757d';
+    
+    // Colores naturales para productos
+    const naturalColors = [
+      '#27ae60',  // Verde natural
+      '#e74c3c',  // Rojo tomate
+      '#f39c12',  // Naranja zanahoria
+      '#8e44ad',  // Púrpura berries
+      '#f1c40f',  // Amarillo limón
+      '#2ecc71',  // Verde menta
+      '#e67e22',  // Naranja calabaza
+      '#9b59b6',  // Púrpura uva
+      '#16a085'   // Verde aguacate
+    ];
+    
+    if (colorMap[sku]) {
+      return colorMap[sku];
+    }
+    
+    // Generar color basado en el SKU para consistencia
+    const skuHash = sku.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return naturalColors[skuHash % naturalColors.length];
   };
 
   const handleCreateOrder = async (product) => {
+    const cantidad = selectedQuantities[product.sku];
+    
+    if (!cantidad || cantidad <= 0) {
+      alert('Por favor ingresa una cantidad válida');
+      return;
+    }
+
     setLoading(true);
     
     try {
       // Datos que se envían al backend
       const orderData = {
+        idAlmacen: 1, // ID del almacén por defecto
         sku: product.sku,
-        cantidad: product.cantidadFija,
-        id_centro_produccion: 1,
+        cantidad: parseInt(cantidad),
         responsable: user.username
       };
 
-      const response = await ProductionService.createProductionOrder(orderData);
+      const response = await axios.post('http://localhost:8081/ordenes-produccion/crear', orderData);
       
-      if (response.success) {
-        // Agregar orden a la lista local
-        const newOrder = {
-          ...response.data,
-          producto: product
-        };
-        
-        setProductionOrders([...productionOrders, newOrder]);
-        alert(`✅ Orden creada exitosamente\n\nCódigo: ${response.data.codigo}\nSKU: ${response.data.sku}\nCantidad: ${response.data.cantidad} ${product.unidadMedida}\nResponsable: ${response.data.usuario_responsable}`);
-      } else {
-        alert(`❌ Error: ${response.error}`);
-      }
+      // Recargar órdenes para mostrar la nueva
+      await loadProductionOrders();
+      
+      alert(`✅ Orden creada exitosamente\n\nSKU: ${product.sku}\nProducto: ${product.name}\nCantidad: ${cantidad} ${product.unidadMedida}\nResponsable: ${user.username}`);
+      
     } catch (error) {
       console.error('Error creando orden:', error);
       alert('❌ Error al crear la orden de producción');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuantityChange = (sku, value) => {
+    setSelectedQuantities(prev => ({
+      ...prev,
+      [sku]: value
+    }));
   };
 
 
@@ -125,8 +190,8 @@ const Production = ({ user }) => {
             <i className="fas fa-clock"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{productionOrders.filter(o => o.estado === 'CREADA').length}</div>
-            <div className="stat-label">Creadas</div>
+            <div className="stat-value">{productionOrders.filter(o => o.estado === 'planificada').length}</div>
+            <div className="stat-label">Planificadas</div>
           </div>
         </div>
 
@@ -135,8 +200,8 @@ const Production = ({ user }) => {
             <i className="fas fa-cogs"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{productionOrders.filter(o => o.estado === 'EN_PROCESO').length}</div>
-            <div className="stat-label">En Proceso</div>
+            <div className="stat-value">{productionOrders.filter(o => o.estado === 'activa').length}</div>
+            <div className="stat-label">Activas</div>
           </div>
         </div>
       </div>
@@ -155,6 +220,15 @@ const Production = ({ user }) => {
         <div className="product-cards">
           {loading ? (
             <div className="loading-message">Cargando productos...</div>
+          ) : products.length === 0 ? (
+            <div className="no-products-message" style={{ padding: '20px', textAlign: 'center', background: '#f8f9fa', borderRadius: '8px' }}>
+              <p>📦 No hay productos fabricables disponibles</p>
+              <p>Para crear órdenes de producción, primero necesitas:</p>
+              <ul style={{ textAlign: 'left', display: 'inline-block' }}>
+                <li>Crear productos finales en la página de Productos</li>
+                <li>Definir sus recetas (BOM) con materias primas</li>
+              </ul>
+            </div>
           ) : (
             products
               .filter(product => 
@@ -174,7 +248,21 @@ const Production = ({ user }) => {
                     <strong>SKU:</strong> {product.sku}
                   </div>
                   <div className="detail-item">
-                    <strong>Cantidad por lote:</strong> {product.cantidadFija} {product.unidadMedida}
+                    <strong>Cantidad a producir:</strong>
+                    <input
+                      type="number"
+                      min="1"
+                      value={selectedQuantities[product.sku] || 100}
+                      onChange={(e) => handleQuantityChange(product.sku, e.target.value)}
+                      style={{
+                        width: '80px',
+                        padding: '4px',
+                        marginLeft: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px'
+                      }}
+                    />
+                    <span style={{ marginLeft: '5px' }}>{product.unidadMedida}</span>
                   </div>
                 </div>
                 <button 
@@ -209,9 +297,11 @@ const Production = ({ user }) => {
                 style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
               >
                 <option value="all">Todos los estados</option>
-                <option value="CREADA">CREADA</option>
-                <option value="EN_PROCESO">EN_PROCESO</option>
-                <option value="TERMINADA">TERMINADA</option>
+                <option value="planificada">PLANIFICADA</option>
+                <option value="activa">ACTIVA</option>
+                <option value="consumida">CONSUMIDA</option>
+                <option value="pausada">PAUSADA</option>
+                <option value="cancelada">CANCELADA</option>
               </select>
               <input
                 type="date"
@@ -240,48 +330,32 @@ const Production = ({ user }) => {
           <table>
             <thead>
               <tr>
-                <th>Código</th>
+                <th>ID</th>
                 <th>SKU</th>
-                <th>Producto</th>
                 <th>Cantidad</th>
                 <th>Estado</th>
                 <th>Responsable</th>
-                <th>Fecha</th>
+                <th>Almacén</th>
               </tr>
             </thead>
             <tbody>
               {productionOrders
                 .filter(order => {
-                  const matchesSearch = order.codigo.toLowerCase().includes(orderFilter.toLowerCase()) ||
-                                      order.sku.toLowerCase().includes(orderFilter.toLowerCase()) ||
-                                      order.producto.name.toLowerCase().includes(orderFilter.toLowerCase());
+                  const matchesSearch = order.idOp.toString().includes(orderFilter.toLowerCase()) ||
+                                      order.sku.toLowerCase().includes(orderFilter.toLowerCase());
                   const matchesStatus = statusFilter === 'all' || order.estado === statusFilter;
-                  const matchesDate = !dateFilter || order.fecha_creacion.startsWith(dateFilter);
-                  return matchesSearch && matchesStatus && matchesDate;
-                })
-                .sort((a, b) => {
-                  let aValue = a[sortBy];
-                  let bValue = b[sortBy];
-                  
-                  if (sortBy === 'cantidad') {
-                    return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-                  }
-                  if (sortBy === 'fecha_creacion') {
-                    return sortOrder === 'asc' ? new Date(aValue) - new Date(bValue) : new Date(bValue) - new Date(aValue);
-                  }
-                  return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                  return matchesSearch && matchesStatus;
                 })
                 .map((order) => (
-                <tr key={order.id_op}>
-                  <td className="order-code">{order.codigo}</td>
+                <tr key={order.idOp}>
+                  <td className="order-code">{order.idOp}</td>
                   <td className="sku-code">{order.sku}</td>
-                  <td>{order.producto.name}</td>
-                  <td>{order.cantidad} {order.producto.unidadMedida}</td>
+                  <td>{order.cantidad}</td>
                   <td>
-                    <span className="status-badge status-info">{order.estado}</span>
+                    <span className={`status-badge status-${order.estado}`}>{order.estado.toUpperCase()}</span>
                   </td>
-                  <td>{order.usuario_responsable}</td>
-                  <td>{new Date(order.fecha_creacion).toLocaleDateString('es-ES')}</td>
+                  <td>{order.responsable}</td>
+                  <td>{order.idAlmacen}</td>
                 </tr>
               ))}
             </tbody>
