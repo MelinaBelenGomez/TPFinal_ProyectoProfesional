@@ -94,6 +94,22 @@ class ProductionServiceAxios {
     }
   }
 
+  // 🔗 CONECTADO AL BACKEND: Obtener productos disponibles para asignar a stock
+  static async getProductsAvailableForStock() {
+    try {
+      const response = await axios.get(`${this.baseURL}/productos/disponibles-stock`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener productos disponibles'
+      };
+    }
+  }
+
   // 📦 SIMULADO: Crear orden de producción
   static async createProductionOrder(orderData) {
     await this.delay();

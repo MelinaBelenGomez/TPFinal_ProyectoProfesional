@@ -15,6 +15,7 @@ const RawMaterials = () => {
   const [sortBy, setSortBy] = useState('nombre');
   const [centros, setCentros] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
+  const [availableProducts, setAvailableProducts] = useState([]);
   const [stockData, setStockData] = useState({
     sku: '',
     idAlmacen: '',
@@ -34,6 +35,7 @@ const RawMaterials = () => {
   useEffect(() => {
     loadMaterials();
     loadInfrastructure();
+    loadAvailableProducts();
   }, []);
 
   const loadInfrastructure = async () => {
@@ -44,6 +46,13 @@ const RawMaterials = () => {
     
     if (centrosResponse.success) setCentros(centrosResponse.data);
     if (almacenesResponse.success) setAlmacenes(almacenesResponse.data);
+  };
+
+  const loadAvailableProducts = async () => {
+    const response = await ProductionServiceAxios.getProductsAvailableForStock();
+    if (response.success) {
+      setAvailableProducts(response.data);
+    }
   };
 
   const loadMaterials = async () => {
@@ -82,6 +91,7 @@ const RawMaterials = () => {
       setShowAddForm(false);
       alert('✅ Materia prima creada exitosamente');
       loadMaterials();
+      loadAvailableProducts(); // Recargar productos disponibles
     } else {
       alert('❌ Error al crear materia prima: ' + response.message);
     }
@@ -216,13 +226,33 @@ const RawMaterials = () => {
             <form onSubmit={handleAddMaterial}>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>Código (SKU):</label>
-                  <input
-                    type="text"
+                  <label>Producto (SKU):</label>
+                  <select
                     value={newMaterial.codigo}
-                    onChange={(e) => setNewMaterial({...newMaterial, codigo: e.target.value})}
+                    onChange={(e) => {
+                      const selectedProduct = availableProducts.find(p => p.sku === e.target.value);
+                      setNewMaterial({
+                        ...newMaterial, 
+                        codigo: e.target.value,
+                        nombre: selectedProduct ? selectedProduct.nombre : '',
+                        categoria: selectedProduct ? selectedProduct.idCategoria : '',
+                        unidad: selectedProduct ? selectedProduct.unidadMedida : 'kg'
+                      });
+                    }}
                     required
-                  />
+                  >
+                    <option value="">Seleccionar producto...</option>
+                    {availableProducts.map(product => (
+                      <option key={product.sku} value={product.sku}>
+                        {product.sku} - {product.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  {availableProducts.length === 0 && (
+                    <small style={{color: '#666', fontSize: '12px'}}>
+                      No hay productos disponibles. Crea productos primero en la sección Productos.
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Nombre:</label>
@@ -230,22 +260,12 @@ const RawMaterials = () => {
                     type="text"
                     value={newMaterial.nombre}
                     onChange={(e) => setNewMaterial({...newMaterial, nombre: e.target.value})}
-                    required
+                    disabled
+                    style={{backgroundColor: '#f8f9fa'}}
+                    placeholder="Se completa automáticamente"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Categoría:</label>
-                  <select
-                    value={newMaterial.categoria}
-                    onChange={(e) => setNewMaterial({...newMaterial, categoria: e.target.value})}
-                    required
-                  >
-                    <option value="">Seleccionar...</option>
-                    {RawMaterialService.getCategories().map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
+
                 <div className="form-group">
                   <label>Descripción:</label>
                   <input
@@ -291,14 +311,13 @@ const RawMaterials = () => {
                 </div>
                 <div className="form-group">
                   <label>Unidad:</label>
-                  <select
+                  <input
+                    type="text"
                     value={newMaterial.unidad}
-                    onChange={(e) => setNewMaterial({...newMaterial, unidad: e.target.value})}
-                  >
-                    {RawMaterialService.getUnits().map(unit => (
-                      <option key={unit} value={unit}>{unit}</option>
-                    ))}
-                  </select>
+                    disabled
+                    style={{backgroundColor: '#f8f9fa'}}
+                    placeholder="Se completa automáticamente"
+                  />
                 </div>
               </div>
               <div className="form-actions">
