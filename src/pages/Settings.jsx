@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import UserManagementService from '../services/userManagementService';
+import UserManagementService from '../services/userManagementServiceReal';
 import '../styles/settings.css';
 
 const Settings = () => {
@@ -17,8 +17,9 @@ const Settings = () => {
     username: '',
     email: '',
     nombre: '',
-    apellido: '',
-    role: '',
+    password: '',
+    rol: '',
+    estacion_asignada: '',
     telefono: ''
   });
 
@@ -51,8 +52,9 @@ const Settings = () => {
         username: '',
         email: '',
         nombre: '',
-        apellido: '',
-        role: '',
+        password: '',
+        rol: '',
+        estacion_asignada: '',
         telefono: ''
       });
       setShowAddForm(false);
@@ -93,13 +95,18 @@ const Settings = () => {
     }
   };
 
-  const getRoleLabel = (role) => {
+  const getRoleLabel = (rol) => {
     const roles = UserManagementService.getRoles();
-    return roles.find(r => r.value === role)?.label || role;
+    return roles.find(r => r.value === rol)?.label || rol;
   };
 
-  const getStatusColor = (estado) => {
-    return estado === 'ACTIVO' ? '#28a745' : '#dc3545';
+  const getEstacionLabel = (estacion) => {
+    const estaciones = UserManagementService.getEstaciones();
+    return estaciones.find(e => e.value === estacion)?.label || estacion || 'Sin asignar';
+  };
+
+  const getStatusColor = (activo) => {
+    return activo ? '#28a745' : '#dc3545';
   };
 
   if (loading) {
@@ -114,7 +121,7 @@ const Settings = () => {
   return (
     <div className="settings-container">
       <div className="page-header">
-        <h1><i className="fas fa-cog"></i> Configuración del Sistema</h1>
+        <h1><i className="fas fa-users-cog"></i> Gestión de Usuarios y Configuración</h1>
       </div>
 
       {/* Estadísticas */}
@@ -187,8 +194,8 @@ const Settings = () => {
               style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
             >
               <option value="all">Todos los estados</option>
-              <option value="ACTIVO">ACTIVO</option>
-              <option value="INACTIVO">INACTIVO</option>
+              <option value="true">ACTIVO</option>
+              <option value="false">INACTIVO</option>
             </select>
             <select
               value={sortBy}
@@ -197,9 +204,7 @@ const Settings = () => {
             >
               <option value="username">Por usuario</option>
               <option value="nombre">Por nombre</option>
-              <option value="email">Por email</option>
-              <option value="role">Por rol</option>
-              <option value="ultimo_acceso">Por último acceso</option>
+              <option value="rol">Por rol</option>
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -215,11 +220,11 @@ const Settings = () => {
             <thead>
               <tr>
                 <th>Usuario</th>
-                <th>Nombre Completo</th>
+                <th>Nombre</th>
                 <th>Email</th>
                 <th>Rol</th>
+                <th>Estación</th>
                 <th>Estado</th>
-                <th>Último Acceso</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -228,47 +233,35 @@ const Settings = () => {
                 .filter(user => {
                   const matchesSearch = user.username.toLowerCase().includes(searchFilter.toLowerCase()) ||
                                       user.nombre.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                                      user.apellido.toLowerCase().includes(searchFilter.toLowerCase()) ||
                                       user.email.toLowerCase().includes(searchFilter.toLowerCase());
-                  const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-                  const matchesStatus = statusFilter === 'all' || user.estado === statusFilter;
+                  const matchesRole = roleFilter === 'all' || user.rol === roleFilter;
+                  const matchesStatus = statusFilter === 'all' || user.activo.toString() === statusFilter;
                   return matchesSearch && matchesRole && matchesStatus;
                 })
                 .sort((a, b) => {
                   let aValue = a[sortBy];
                   let bValue = b[sortBy];
                   
-                  if (sortBy === 'ultimo_acceso') {
-                    if (!aValue && !bValue) return 0;
-                    if (!aValue) return sortOrder === 'asc' ? 1 : -1;
-                    if (!bValue) return sortOrder === 'asc' ? -1 : 1;
-                    return sortOrder === 'asc' ? new Date(aValue) - new Date(bValue) : new Date(bValue) - new Date(aValue);
-                  }
-                  if (sortBy === 'nombre') {
-                    aValue = `${a.nombre} ${a.apellido}`;
-                    bValue = `${b.nombre} ${b.apellido}`;
+                  if (sortBy === 'rol') {
+                    aValue = a.rol;
+                    bValue = b.rol;
                   }
                   return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
                 })
                 .map(user => (
                 <tr key={user.id}>
                   <td className="username-cell">{user.username}</td>
-                  <td>{user.nombre} {user.apellido}</td>
+                  <td>{user.nombre}</td>
                   <td>{user.email}</td>
-                  <td>{getRoleLabel(user.role)}</td>
+                  <td>{getRoleLabel(user.rol)}</td>
+                  <td>{getEstacionLabel(user.estacion_asignada)}</td>
                   <td>
                     <span 
                       className="status-badge"
-                      style={{ backgroundColor: getStatusColor(user.estado) }}
+                      style={{ backgroundColor: getStatusColor(user.activo) }}
                     >
-                      {user.estado}
+                      {user.activo ? 'ACTIVO' : 'INACTIVO'}
                     </span>
-                  </td>
-                  <td>
-                    {user.ultimo_acceso 
-                      ? new Date(user.ultimo_acceso).toLocaleDateString()
-                      : 'Nunca'
-                    }
                   </td>
                   <td>
                     <div className="action-buttons">
@@ -282,13 +275,13 @@ const Settings = () => {
                       <button 
                         className="btn btn-sm"
                         style={{ 
-                          backgroundColor: user.estado === 'ACTIVO' ? '#ffc107' : '#28a745',
+                          backgroundColor: user.activo ? '#ffc107' : '#28a745',
                           color: 'white'
                         }}
                         onClick={() => handleToggleStatus(user.id)}
-                        title={user.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'}
+                        title={user.activo ? 'Desactivar' : 'Activar'}
                       >
-                        <i className={`fas fa-${user.estado === 'ACTIVO' ? 'pause' : 'play'}`}></i>
+                        <i className={`fas fa-${user.activo ? 'pause' : 'play'}`}></i>
                       </button>
                       {user.username !== 'admin' && (
                         <button 
@@ -308,10 +301,9 @@ const Settings = () => {
           {users.filter(user => {
             const matchesSearch = user.username.toLowerCase().includes(searchFilter.toLowerCase()) ||
                                 user.nombre.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                                user.apellido.toLowerCase().includes(searchFilter.toLowerCase()) ||
                                 user.email.toLowerCase().includes(searchFilter.toLowerCase());
-            const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-            const matchesStatus = statusFilter === 'all' || user.estado === statusFilter;
+            const matchesRole = roleFilter === 'all' || user.rol === roleFilter;
+            const matchesStatus = statusFilter === 'all' || user.activo.toString() === statusFilter;
             return matchesSearch && matchesRole && matchesStatus;
           }).length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
@@ -357,12 +349,12 @@ const Settings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email:</label>
+                  <label>Contraseña:</label>
                   <input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                    required
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                    placeholder="Dejar vacío para usar 'frozen2025'"
                   />
                 </div>
                 <div className="form-group">
@@ -375,19 +367,20 @@ const Settings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Apellido:</label>
+                  <label>Email:</label>
                   <input
-                    type="text"
-                    value={newUser.apellido}
-                    onChange={(e) => setNewUser({...newUser, apellido: e.target.value})}
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    placeholder="usuario@frozen.com"
                     required
                   />
                 </div>
                 <div className="form-group">
                   <label>Rol:</label>
                   <select
-                    value={newUser.role}
-                    onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                    value={newUser.rol}
+                    onChange={(e) => setNewUser({...newUser, rol: e.target.value})}
                     required
                   >
                     <option value="">Seleccionar rol...</option>
@@ -398,6 +391,23 @@ const Settings = () => {
                     ))}
                   </select>
                 </div>
+                {newUser.rol === 'OPERARIO' && (
+                  <div className="form-group">
+                    <label>Estación Asignada:</label>
+                    <select
+                      value={newUser.estacion_asignada}
+                      onChange={(e) => setNewUser({...newUser, estacion_asignada: e.target.value})}
+                      required
+                    >
+                      <option value="">Seleccionar estación...</option>
+                      {UserManagementService.getEstaciones().map(estacion => (
+                        <option key={estacion.value} value={estacion.value}>
+                          {estacion.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Teléfono:</label>
                   <input
@@ -445,12 +455,12 @@ const Settings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email:</label>
+                  <label>Nueva Contraseña:</label>
                   <input
-                    type="email"
-                    value={editingUser.email}
-                    onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
-                    required
+                    type="password"
+                    value={editingUser.password || ''}
+                    onChange={(e) => setEditingUser({...editingUser, password: e.target.value})}
+                    placeholder="Dejar vacío para mantener actual"
                   />
                 </div>
                 <div className="form-group">
@@ -463,19 +473,19 @@ const Settings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Apellido:</label>
+                  <label>Email:</label>
                   <input
-                    type="text"
-                    value={editingUser.apellido}
-                    onChange={(e) => setEditingUser({...editingUser, apellido: e.target.value})}
+                    type="email"
+                    value={editingUser.email || ''}
+                    onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
                     required
                   />
                 </div>
                 <div className="form-group">
                   <label>Rol:</label>
                   <select
-                    value={editingUser.role}
-                    onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                    value={editingUser.rol}
+                    onChange={(e) => setEditingUser({...editingUser, rol: e.target.value})}
                     required
                   >
                     {UserManagementService.getRoles().map(role => (
@@ -485,11 +495,27 @@ const Settings = () => {
                     ))}
                   </select>
                 </div>
+                {editingUser.rol === 'OPERARIO' && (
+                  <div className="form-group">
+                    <label>Estación Asignada:</label>
+                    <select
+                      value={editingUser.estacion_asignada || ''}
+                      onChange={(e) => setEditingUser({...editingUser, estacion_asignada: e.target.value})}
+                    >
+                      <option value="">Sin asignar</option>
+                      {UserManagementService.getEstaciones().map(estacion => (
+                        <option key={estacion.value} value={estacion.value}>
+                          {estacion.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Teléfono:</label>
                   <input
                     type="tel"
-                    value={editingUser.telefono}
+                    value={editingUser.telefono || '123-456-7890'}
                     onChange={(e) => setEditingUser({...editingUser, telefono: e.target.value})}
                   />
                 </div>

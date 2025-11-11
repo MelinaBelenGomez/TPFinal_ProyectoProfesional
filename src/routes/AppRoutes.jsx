@@ -30,6 +30,7 @@ const AppRoutes = ({ user }) => {
         <Route path="/products" element={<Products />} />
         <Route path="/raw-materials" element={<RawMaterials />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/user-management" element={<Settings />} />
         <Route path="/infrastructure" element={<Infrastructure />} />
         <Route path="/test-backend" element={<TestBackend />} />
         <Route path="*" element={<Navigate to="/" replace />} />
