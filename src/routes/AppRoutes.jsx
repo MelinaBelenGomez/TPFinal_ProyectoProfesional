@@ -15,7 +15,7 @@ import TestBackend from '../pages/TestBackend';
 import Infrastructure from '../pages/Infrastructure';
 
 const AppRoutes = ({ user }) => {
-  if (user?.role === 'admin') {
+  if (user?.rol === 'ADMIN') {
     return (
       <Routes>
         <Route path="/" element={
@@ -26,30 +26,42 @@ const AppRoutes = ({ user }) => {
           </>
         } />
         <Route path="/reports" element={<Reports />} />
-        {/*<Route path="/orders" element={<Orders />} />*/}
         <Route path="/production" element={<Production user={user} />} />
         <Route path="/products" element={<Products />} />
         <Route path="/raw-materials" element={<RawMaterials />} />
-        {/*<Route path="/clients" element={<Clients />} />*/}
         <Route path="/settings" element={<Settings />} />
         <Route path="/infrastructure" element={<Infrastructure />} />
         <Route path="/test-backend" element={<TestBackend />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
-  } else if (user?.role === 'employee') {
+  } else if (user?.rol === 'JEFE_PRODUCCION') {
     return (
       <Routes>
-        <Route path="/" element={<EmployeeDashboard user={user} />} />
+        <Route path="/" element={
+          <>
+            <Dashboard />
+            <ProductsTable />
+          </>
+        } />
+        <Route path="/production-orders" element={<Production user={user} />} />
+        <Route path="/process-monitor" element={<Reports />} />
+        <Route path="/staff-assignment" element={<Settings />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
-  } else {
-    // Operarios de producción
+  } else if (user?.rol === 'OPERARIO') {
+    // Operarios - solo su estación
     return (
       <Routes>
         <Route path="/" element={<WorkStation user={user} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  } else {
+    return (
+      <Routes>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

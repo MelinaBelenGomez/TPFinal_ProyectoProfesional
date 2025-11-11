@@ -5,23 +5,25 @@ const WorkStation = ({ user }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stageInfo, setStageInfo] = useState(null);
-const [showErrorForm, setShowErrorForm] = useState(null); // guarda el ID de la orden con el form abierto
-
-const [errorData, setErrorData] = useState({
-  lote: '',
-  estado: '',
-  observaciones: ''
-});
+  const [showErrorForm, setShowErrorForm] = useState(null);
+  const [errorData, setErrorData] = useState({
+    lote: '',
+    estado: '',
+    observaciones: ''
+  });
 
   useEffect(() => {
-    loadOrders();
-    loadStageInfo();
+    if (user?.rol === 'OPERARIO' && user?.estacion_asignada) {
+      loadOrders();
+      loadStageInfo();
+    }
   }, [user]);
 
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const response = await WorkflowService.getOrdersForRole(user.role);
+      // Cargar órdenes para la estación asignada del operario
+      const response = await WorkflowService.getOrdersForStation(user.estacion_asignada);
       if (response.success) {
         setOrders(response.data);
       }
@@ -33,7 +35,7 @@ const [errorData, setErrorData] = useState({
   };
 
   const loadStageInfo = () => {
-    const info = WorkflowService.getStageInfo(user.role);
+    const info = WorkflowService.getStageInfoByStation(user.estacion_asignada);
     setStageInfo(info);
   };
 
@@ -69,12 +71,35 @@ const [errorData, setErrorData] = useState({
     }
   };
 
+  // Verificar que el usuario sea operario y tenga estación asignada
+  if (user?.rol !== 'OPERARIO') {
+    return (
+      <div className="workstation-container">
+        <div className="error-message">
+          <i className="fas fa-exclamation-triangle"></i>
+          Esta sección es solo para operarios
+        </div>
+      </div>
+    );
+  }
+
+  if (!user?.estacion_asignada) {
+    return (
+      <div className="workstation-container">
+        <div className="error-message">
+          <i className="fas fa-exclamation-triangle"></i>
+          No tienes una estación asignada. Contacta al jefe de producción.
+        </div>
+      </div>
+    );
+  }
+
   if (!stageInfo) {
     return (
       <div className="workstation-container">
         <div className="error-message">
           <i className="fas fa-exclamation-triangle"></i>
-          No se encontró información para tu rol: {user.role}
+          No se encontró información para tu estación: {user.estacion_asignada}
         </div>
       </div>
     );
@@ -90,7 +115,7 @@ const [errorData, setErrorData] = useState({
           <div className="stage-details">
             <h2>{stageInfo.title}</h2>
             <p>{stageInfo.description}</p>
-            <span className="operator-name">Operario: {user.nombre_completo}</span>
+            <span className="operator-name">Operario: {user.nombre}</span>
           </div>
         </div>
       </div>

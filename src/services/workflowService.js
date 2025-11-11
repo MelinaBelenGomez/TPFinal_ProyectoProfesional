@@ -49,19 +49,18 @@ class WorkflowService {
     }
   ];
 
-  // Definir qué estados puede ver cada rol
-  static getVisibleStatesForRole(role) {
+  // Definir qué estados puede ver cada estación
+  static getVisibleStatesForStation(station) {
     const stateMap = {
-      'operario_lavado': ['CREADA'],
-      'operario_clasificacion': ['LAVADO'],
-      'pelado_trozado': ['CLASIFICACION'],
-      'operario_escurrido': ['PELADO'],
-      'operario_congelacion': ['ESCURRIDO'],
-      'operario_empaquetado': ['CONGELACION'],
-      'admin': ['CREADA', 'LAVADO', 'CLASIFICACION', 'PELADO', 'ESCURRIDO', 'CONGELACION', 'EMPAQUETADO', 'TERMINADA']
+      'LAVADO': ['CREADA'],
+      'CLASIFICACION': ['LAVADO'],
+      'PELADO_TROZADO': ['CLASIFICACION'],
+      'ESCURRIDO': ['PELADO'],
+      'CONGELACION': ['ESCURRIDO'],
+      'EMPAQUETADO': ['CONGELACION']
     };
     
-    return stateMap[role] || [];
+    return stateMap[station] || [];
   }
 
   // Definir el siguiente estado en el flujo
@@ -80,14 +79,14 @@ class WorkflowService {
   }
 
 
-  // Obtener órdenes para un rol específico
-  static async getOrdersForRole(userRole) {
+  // Obtener órdenes para una estación específica
+  static async getOrdersForStation(station) {
     await this.delay();
     
     try {
-      const visibleStates = this.getVisibleStatesForRole(userRole);
+      const visibleStates = this.getVisibleStatesForStation(station);
       
-      // Filtrar órdenes según el rol
+      // Filtrar órdenes según la estación
       const filteredOrders = this.mockOrders.filter(order => 
         visibleStates.includes(order.estado)
       );
@@ -188,45 +187,45 @@ class WorkflowService {
     }
   }
 
-  // Obtener información de la etapa actual para un rol
-  static getStageInfo(role) {
+  // Obtener información de la etapa actual para una estación
+  static getStageInfoByStation(station) {
     const stageInfo = {
-      'operario_lavado': {
+      'LAVADO': {
         title: 'Lavado y Desinfección',
         description: 'Lavar y desinfectar la materia prima',
         icon: 'fas fa-tint',
         color: '#17a2b8',
         nextStage: 'Clasificación'
       },
-      'operario_clasificacion': {
+      'CLASIFICACION': {
         title: 'Clasificación y Selección',
         description: 'Clasificar y seleccionar manualmente los productos',
         icon: 'fas fa-search',
         color: '#28a745',
         nextStage: 'Pelado'
       },
-      'pelado_trozado': {
+      'PELADO_TROZADO': {
         title: 'Pelado y Trozado',
         description: 'Pelar y realizar corte controlado',
         icon: 'fas fa-cut',
         color: '#ffc107',
         nextStage: 'Escurrido'
       },
-      'operario_escurrido': {
+      'ESCURRIDO': {
         title: 'Escurrido y Preenfriamiento',
         description: 'Eliminar excesos de agua y preenfriar',
         icon: 'fas fa-snowflake',
         color: '#6f42c1',
         nextStage: 'Congelación'
       },
-      'operario_congelacion': {
+      'CONGELACION': {
         title: 'Congelación Rápida',
         description: 'Proceso crítico de congelación IQF',
         icon: 'fas fa-thermometer-empty',
         color: '#dc3545',
         nextStage: 'Empaquetado'
       },
-      'operario_empaquetado': {
+      'EMPAQUETADO': {
         title: 'Empaquetado Final',
         description: 'Empaquetado y preparación para distribución',
         icon: 'fas fa-box',
@@ -235,7 +234,7 @@ class WorkflowService {
       }
     };
     
-    return stageInfo[role] || null;
+    return stageInfo[station] || null;
   }
 
   

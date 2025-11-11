@@ -28,17 +28,13 @@ const Login = ({ onLogin }) => {
     setLoading(true);
     
     try {
-      const response = await AuthService.login({
-        username: formData.username,
-        password: formData.password
-      });
+      const response = await AuthService.login(formData.username, formData.password);
 
       if (response.success) {
         // Login exitoso
         const userData = {
           isAuthenticated: true,
-          ...response.data.user,
-          token: response.data.token
+          ...response.user
         };
         
         onLogin(userData);
@@ -120,10 +116,10 @@ const Login = ({ onLogin }) => {
           <p><strong>Contraseña para todos:</strong> frozen2025</p>
           <hr style={{margin: '0.5rem 0', border: '1px solid #e9ecef'}} />
           <p><strong>Admin:</strong> admin</p>
-          <p><strong>Empleado:</strong> empleado</p>
+          <p><strong>Jefe Producción:</strong> jefe</p>
           <p><strong>Lavado:</strong> operario_lavado</p>
           <p><strong>Clasificación:</strong> operario_clasificacion</p>
-          <p><strong>Pelado:</strong> pelado_trozado</p>
+          <p><strong>Pelado:</strong> operario_pelado</p>
           <p><strong>Escurrido:</strong> operario_escurrido</p>
           <p><strong>Congelación:</strong> operario_congelacion</p>
           <p><strong>Empaquetado:</strong> operario_empaquetado</p>

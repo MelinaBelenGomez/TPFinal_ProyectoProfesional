@@ -16,7 +16,7 @@ const Header = ({ onLogout, user }) => {
   };
 
   const getMenuItems = () => {
-    if (user?.role === 'admin') {
+    if (user?.rol === 'ADMIN') {
       return [
         { icon: 'fas fa-home', text: 'Inicio', path: '/' },
         { icon: 'fas fa-building', text: 'Centros y Almacenes', path: '/infrastructure' },
@@ -24,19 +24,24 @@ const Header = ({ onLogout, user }) => {
         { icon: 'fas fa-seedling', text: 'Materia Prima', path: '/raw-materials' },
         { icon: 'fas fa-industry', text: 'Producción', path: '/production' },
         { icon: 'fas fa-chart-bar', text: 'Reportes', path: '/reports' },
-        { icon: 'fas fa-cog', text: 'Configuración', path: '/settings' },
+        { icon: 'fas fa-users', text: 'Usuarios', path: '/user-management' },
         { icon: 'fas fa-plug', text: 'Test Backend', path: '/test-backend' }
       ];
-    } else if (user?.role === 'employee') {
+    } else if (user?.rol === 'JEFE_PRODUCCION') {
       return [
-        { icon: 'fas fa-clock', text: 'Registro de Horarios', path: '/' },
-        { icon: 'fas fa-chart-line', text: 'Mis Reportes', path: '/reports' }
+        { icon: 'fas fa-tachometer-alt', text: 'Dashboard Producción', path: '/' },
+        { icon: 'fas fa-clipboard-list', text: 'Órdenes de Producción', path: '/production-orders' },
+        { icon: 'fas fa-eye', text: 'Monitor de Procesos', path: '/process-monitor' },
+        { icon: 'fas fa-user-cog', text: 'Asignación Personal', path: '/staff-assignment' },
+        { icon: 'fas fa-chart-line', text: 'Reportes', path: '/reports' }
+      ];
+    } else if (user?.rol === 'OPERARIO') {
+      // Operarios - solo su estación
+      return [
+        { icon: 'fas fa-tasks', text: `Estación ${user.estacion_asignada}`, path: '/' }
       ];
     } else {
-      // Operarios de producción
-      return [
-        { icon: 'fas fa-tasks', text: 'Mi Estación', path: '/' }
-      ];
+      return [];
     }
   };
 
@@ -46,7 +51,7 @@ const Header = ({ onLogout, user }) => {
         <div className="logo-container">
           <h1 className="logo">FROZEN</h1>
           <div className="header-actions">
-            {user?.role === 'admin' && <NotificationBell />}
+            {user?.rol === 'ADMIN' && <NotificationBell />}
             <button className="logout-btn" onClick={onLogout}>
               <i className="fas fa-sign-out-alt"></i> Salir
             </button>
