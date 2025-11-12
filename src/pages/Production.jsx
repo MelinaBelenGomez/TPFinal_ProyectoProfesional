@@ -11,7 +11,7 @@ const Production = ({ user }) => {
   const [dateFilter, setDateFilter] = useState('');
   const [sortBy, setSortBy] = useState('idOp');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [selectedQuantities, setSelectedQuantities] = useState({});
+  const [productionConfig, setProductionConfig] = useState(null);
 
   // Cargar productos y órdenes al iniciar
   useEffect(() => {
@@ -34,12 +34,8 @@ const Production = ({ user }) => {
       }));
       setProducts(productsWithUI);
       
-      // Inicializar cantidades por defecto
-      const initialQuantities = {};
-      productsWithUI.forEach(product => {
-        initialQuantities[product.sku] = 100; // Cantidad por defecto
-      });
-      setSelectedQuantities(initialQuantities);
+      // Cargar configuración de producción
+      await loadProductionConfig();
     } catch (error) {
       console.error('Error cargando productos:', error);
       console.error('Detalles del error:', error.response?.data || error.message);
@@ -125,12 +121,12 @@ const Production = ({ user }) => {
   };
 
   const handleCreateOrder = async (product) => {
-    const cantidad = selectedQuantities[product.sku];
-    
-    if (!cantidad || cantidad <= 0) {
-      alert('Por favor ingresa una cantidad válida');
+    if (!productionConfig) {
+      alert('Error: No se ha cargado la configuración de producción. Ve a Configuración para establecer los parámetros.');
       return;
     }
+    
+    const cantidad = productionConfig.cantidad_base_orden;
 
     setLoading(true);
     
@@ -148,7 +144,35 @@ const Production = ({ user }) => {
       // Recargar órdenes para mostrar la nueva
       await loadProductionOrders();
       
-      alert(`✅ Orden creada exitosamente\n\nSKU: ${product.sku}\nProducto: ${product.name}\nCantidad: ${cantidad} ${product.unidadMedida}\nResponsable: ${user.username}`);
+      // Preguntar si desea comenzar la producción inmediatamente
+      const comenzarProduccion = window.confirm(
+        `✅ Orden creada exitosamente\n\n` +
+        `SKU: ${product.sku}\n` +
+        `Producto: ${product.name}\n` +
+        `Cantidad: ${cantidad} ${product.unidadMedida}\n` +
+        `Peso total: ${calculateWeight(cantidad, productionConfig.sku_referencia)} kg\n` +
+        `Lotes: ${productionConfig.numero_lotes_fijo}\n` +
+        `Responsable: ${user.username}\n\n` +
+        `¿Deseas comenzar con la producción ahora?\n` +
+        `(Esto reservará los materiales necesarios y enviará la orden a la estación de lavado)`
+      );
+      
+      if (comenzarProduccion) {
+        // Buscar la orden recién creada para obtener su ID
+        const updatedOrders = await axios.get('http://localhost:8081/ordenes-produccion/consultar/todas');
+        const newOrder = updatedOrders.data.find(order => 
+          order.sku === product.sku && 
+          order.cantidad === cantidad && 
+          order.responsable === user.username &&
+          order.estado === 'planificada'
+        );
+        
+        if (newOrder) {
+          await activarOrden(newOrder, product);
+        } else {
+          alert('⚠️ No se pudo encontrar la orden recién creada para activarla');
+        }
+      }
       
     } catch (error) {
       console.error('Error creando orden:', error);
@@ -158,11 +182,76 @@ const Production = ({ user }) => {
     }
   };
 
-  const handleQuantityChange = (sku, value) => {
-    setSelectedQuantities(prev => ({
-      ...prev,
-      [sku]: value
-    }));
+  const activarOrden = async (orderData, product) => {
+    try {
+      setLoading(true);
+      
+      console.log('Activando orden:', orderData); // Debug
+      
+      // Activar la orden en el backend
+      const activateData = {
+        idOp: orderData.idOp,
+        responsable: user.username
+      };
+      
+      console.log('Datos de activación:', activateData); // Debug
+      
+      await axios.put('http://localhost:8081/ordenes-produccion/activar', activateData);
+      
+      // Recargar órdenes para mostrar el cambio de estado
+      await loadProductionOrders();
+      
+      alert(
+        `🚀 ¡Producción iniciada!\n\n` +
+        `✅ Materiales reservados automáticamente\n` +
+        `📋 Orden enviada a la estación de LAVADO\n` +
+        `👥 Los operarios pueden comenzar a trabajar`
+      );
+      
+    } catch (error) {
+      console.error('Error activando orden:', error);
+      alert(
+        `⚠️ La orden fue creada pero no se pudo activar\n\n` +
+        `Posibles causas:\n` +
+        `• No hay suficientes materias primas en stock\n` +
+        `• Error de conexión con el servidor\n\n` +
+        `Puedes activarla manualmente desde la tabla de órdenes`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProductionConfig = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/config-produccion');
+      const savedSku = localStorage.getItem('skuSeleccionado');
+      
+      setProductionConfig({
+        cantidad_base_orden: response.data.cantidadBaseOrden,
+        numero_lotes_fijo: response.data.numeroLotesFijo,
+        sku_referencia: savedSku || 'MIX-BERRIES-500G'
+      });
+    } catch (error) {
+      console.error('Error cargando configuración:', error);
+      const savedSku = localStorage.getItem('skuSeleccionado');
+      // Configuración por defecto si hay error
+      setProductionConfig({
+        cantidad_base_orden: 500,
+        numero_lotes_fijo: 10,
+        sku_referencia: savedSku || 'MIX-BERRIES-500G'
+      });
+    }
+  };
+  
+  const calculateWeight = (cantidad, skuReferencia) => {
+    // Simular peso unitario basado en BOM
+    const pesosPorSku = {
+      'MIX-BERRIES-500G': 0.5, // 500g
+      'MIX-TROPICAL-1KG': 1.0  // 1000g
+    };
+    const pesoUnitario = pesosPorSku[skuReferencia] || 0.5;
+    return (cantidad * pesoUnitario).toFixed(1);
   };
 
 
@@ -172,6 +261,35 @@ const Production = ({ user }) => {
       <div className="production-header">
         <h2>Órdenes de Producción</h2>
         <p>Gestiona los lotes de producción de productos congelados</p>
+        
+        {productionConfig && (
+          <div style={{
+            background: '#e7f3ff',
+            padding: '15px',
+            borderRadius: '5px',
+            border: '1px solid #b3d9ff',
+            marginTop: '15px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+              <i className="fas fa-cogs" style={{ color: '#0066cc', marginRight: '8px' }}></i>
+              <strong style={{ color: '#0066cc' }}>Configuración Actual:</strong>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', fontSize: '14px' }}>
+              <div>
+                <strong>Cantidad por orden:</strong> {productionConfig.cantidad_base_orden} unidades
+              </div>
+              <div>
+                <strong>Peso por orden:</strong> {calculateWeight(productionConfig.cantidad_base_orden, productionConfig.sku_referencia)} kg
+              </div>
+              <div>
+                <strong>Número de lotes:</strong> {productionConfig.numero_lotes_fijo} lotes
+              </div>
+              <div style={{ color: '#6c757d' }}>
+                <em>Configurar en Ajustes → Configuración de Producción</em>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="production-stats">
@@ -248,22 +366,36 @@ const Production = ({ user }) => {
                     <strong>SKU:</strong> {product.sku}
                   </div>
                   <div className="detail-item">
-                    <strong>Cantidad a producir:</strong>
-                    <input
-                      type="number"
-                      min="1"
-                      value={selectedQuantities[product.sku] || 100}
-                      onChange={(e) => handleQuantityChange(product.sku, e.target.value)}
-                      style={{
-                        width: '80px',
-                        padding: '4px',
-                        marginLeft: '8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px'
-                      }}
-                    />
-                    <span style={{ marginLeft: '5px' }}>{product.unidadMedida}</span>
+                    <strong>Cantidad configurada:</strong>
+                    <span style={{ 
+                      marginLeft: '8px', 
+                      padding: '4px 8px',
+                      background: '#e9ecef',
+                      borderRadius: '4px',
+                      fontWeight: 'bold'
+                    }}>
+                      {productionConfig ? productionConfig.cantidad_base_orden : 'Cargando...'} {product.unidadMedida}
+                    </span>
                   </div>
+                  {productionConfig && (
+                    <div className="detail-item">
+                      <strong>Peso total:</strong>
+                      <span style={{ 
+                        marginLeft: '8px',
+                        color: '#007bff',
+                        fontWeight: 'bold'
+                      }}>
+                        {calculateWeight(productionConfig.cantidad_base_orden, productionConfig.sku_referencia)} kg
+                      </span>
+                      <span style={{ 
+                        marginLeft: '8px',
+                        fontSize: '12px',
+                        color: '#6c757d'
+                      }}>
+                        ({productionConfig.numero_lotes_fijo} lotes)
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <button 
                   className="create-order-btn"

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import UserManagementService from '../services/userManagementServiceReal';
 import '../styles/settings.css';
 
@@ -22,6 +23,16 @@ const Settings = () => {
     estacion_asignada: '',
     telefono: ''
   });
+  
+  // Estados para configuración de producción
+  const [productionConfig, setProductionConfig] = useState({
+    cantidad_base_orden: 500,
+    numero_lotes_fijo: 10
+  });
+  const [showProductionConfig, setShowProductionConfig] = useState(false);
+  const [pesoUnitario, setPesoUnitario] = useState(500); // gramos por defecto
+  const [productosConBom, setProductosConBom] = useState([]);
+  const [skuSeleccionado, setSkuSeleccionado] = useState('');
 
   useEffect(() => {
     loadData();
@@ -40,7 +51,112 @@ const Settings = () => {
     if (statsResponse.success) {
       setStats(statsResponse.data);
     }
+    
+    // Cargar configuración de producción y productos con BOM
+    await loadProductionConfig();
+    await loadProductosConBom();
     setLoading(false);
+  };
+  
+  const loadProductionConfig = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/config-produccion');
+      setProductionConfig({
+        cantidad_base_orden: response.data.cantidadBaseOrden,
+        numero_lotes_fijo: response.data.numeroLotesFijo
+      });
+    } catch (error) {
+      console.error('Error cargando configuración:', error);
+      // Usar valores por defecto si hay error
+      setProductionConfig({
+        cantidad_base_orden: 500,
+        numero_lotes_fijo: 10
+      });
+    }
+  };
+  
+  const saveProductionConfig = async () => {
+    // Validación simple de unidades sobrantes
+    const unidadesSobrantes = productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo;
+    if (unidadesSobrantes > 0) {
+      const mensaje = `⚠️ ADVERTENCIA: ${productionConfig.cantidad_base_orden} unidades no se divide exactamente entre ${productionConfig.numero_lotes_fijo} lotes.\n\nSobrarán ${unidadesSobrantes} unidades.\n\n¿Deseas continuar de todas formas?`;
+      
+      if (!confirm(mensaje)) {
+        return;
+      }
+    }
+    
+    try {
+      // Guardar en backend
+      await axios.put('http://localhost:8081/config-produccion', {
+        cantidadBaseOrden: productionConfig.cantidad_base_orden,
+        numeroLotesFijo: productionConfig.numero_lotes_fijo,
+        modificadoPor: 'ADMIN' // O usar el usuario actual
+      });
+      
+      // Guardar SKU seleccionado en localStorage (solo para UI)
+      localStorage.setItem('skuSeleccionado', skuSeleccionado);
+      
+      alert('✅ Configuración de producción guardada exitosamente en la base de datos');
+      setShowProductionConfig(false);
+    } catch (error) {
+      console.error('Error guardando configuración:', error);
+      alert('❌ Error al guardar la configuración. Inténtalo de nuevo.');
+    }
+  };
+  
+  const calculateMaterialUsage = () => {
+    // Cálculo correcto: dividir PESO total entre número de lotes
+    const pesoTotalOrden = (productionConfig.cantidad_base_orden * pesoUnitario) / 1000; // kg total
+    const pesoLote = pesoTotalOrden / productionConfig.numero_lotes_fijo; // kg por lote
+    
+    // Para referencia: cuántas unidades equivalen a cada lote
+    const unidadesEquivalentes = Math.floor(productionConfig.cantidad_base_orden / productionConfig.numero_lotes_fijo);
+    const unidadesSobrantes = productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo;
+    
+    // Calcular peso sobrante basado en unidades sobrantes
+    const pesoSobrante = (unidadesSobrantes * pesoUnitario) / 1000; // kg sobrante
+    
+    return {
+      pesoTotalOrden: pesoTotalOrden.toFixed(1),
+      pesoLote: pesoLote.toFixed(1),
+      pesoSobrante: pesoSobrante.toFixed(1),
+      totalLotes: productionConfig.numero_lotes_fijo,
+      pesoUnitario: (pesoUnitario / 1000).toFixed(2),
+      unidadesEquivalentes, // Solo para referencia
+      unidadesSobrantes // Solo para referencia
+    };
+  };
+  
+  const loadProductosConBom = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/bom/productos-fabricables');
+      setProductosConBom(response.data);
+      
+      // Seleccionar el primer producto por defecto si no hay uno seleccionado
+      if (response.data.length > 0 && !skuSeleccionado) {
+        const primerProducto = response.data[0].sku;
+        setSkuSeleccionado(primerProducto);
+        await calcularPesoDesdeProducto(primerProducto);
+      }
+    } catch (error) {
+      console.error('Error cargando productos con BOM:', error);
+    }
+  };
+  
+  const calcularPesoDesdeProducto = async (sku) => {
+    try {
+      // Obtener BOM del producto seleccionado
+      const response = await axios.get(`http://localhost:8081/bom/${sku}`);
+      const pesoTotal = response.data.reduce((total, item) => 
+        total + (item.cantPorUnidad || 0), 0
+      );
+      setPesoUnitario(pesoTotal > 0 ? pesoTotal : 500);
+    } catch (error) {
+      console.error('Error calculando peso desde BOM:', error);
+      // Usar peso por defecto
+      setPesoUnitario(500);
+    }
   };
 
   const handleCreateUser = async (e) => {
@@ -156,6 +272,67 @@ const Settings = () => {
           </div>
         </div>
       )}
+
+      {/* Configuración de Producción */}
+      <div className="production-config-section" style={{ marginBottom: '30px' }}>
+        <div className="section-header">
+          <h2><i className="fas fa-cogs"></i> Configuración de Producción</h2>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => setShowProductionConfig(true)}
+          >
+            <i className="fas fa-edit"></i> Configurar Lotes
+          </button>
+        </div>
+        
+        <div style={{ 
+          background: '#e7f3ff', 
+          padding: '15px', 
+          borderRadius: '5px', 
+          marginBottom: '15px',
+          border: '1px solid #b3d9ff'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <i className="fas fa-info-circle" style={{ color: '#0066cc', marginRight: '8px' }}></i>
+            <strong style={{ color: '#0066cc' }}>¿Qué son los lotes?</strong>
+          </div>
+          <p style={{ margin: '0', color: '#004080', fontSize: '14px' }}>
+            Los <strong>lotes son cantidades de materia prima en kilogramos</strong> que van pasando de estación a estación durante el proceso productivo. 
+            Cada lote representa la cantidad de material (frutas, verduras) que un operario procesa antes de enviarlo a la siguiente estación.
+          </p>
+        </div>
+        
+        <div className="config-summary" style={{ 
+          background: '#f8f9fa', 
+          padding: '20px', 
+          borderRadius: '8px',
+          border: '1px solid #dee2e6'
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <div className="config-item">
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#007bff' }}>
+                {productionConfig.cantidad_base_orden}
+              </div>
+              <div style={{ color: '#6c757d' }}>Cantidad Base por Orden</div>
+              <div style={{ fontSize: '12px', color: '#007bff' }}>= {((productionConfig.cantidad_base_orden * pesoUnitario) / 1000).toFixed(1)} kg</div>
+            </div>
+            <div className="config-item">
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+                {productionConfig.numero_lotes_fijo}
+              </div>
+              <div style={{ color: '#6c757d' }}>Número de Lotes</div>
+            </div>
+            <div className="config-item">
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffc107' }}>
+                {(((productionConfig.cantidad_base_orden * pesoUnitario) / 1000) / productionConfig.numero_lotes_fijo).toFixed(1)} kg
+              </div>
+              <div style={{ color: '#6c757d' }}>Peso por Lote</div>
+              <div style={{ fontSize: '12px', color: '#6c757d' }}>Kg que pasan entre estaciones</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
 
       {/* Gestión de Usuarios */}
       <div className="users-section">
@@ -529,6 +706,147 @@ const Settings = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal Configuración de Producción */}
+      {showProductionConfig && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3><i className="fas fa-cogs"></i> Configuración de Lotes de Producción</h3>
+              <button 
+                className="btn-close"
+                onClick={() => setShowProductionConfig(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ 
+              background: '#fff3cd', 
+              padding: '15px', 
+              margin: '0 20px 20px 20px', 
+              borderRadius: '5px',
+              border: '1px solid #ffeaa7'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                <i className="fas fa-lightbulb" style={{ color: '#856404', marginRight: '8px' }}></i>
+                <strong style={{ color: '#856404' }}>Concepto de Lotes</strong>
+              </div>
+              <p style={{ margin: '0', color: '#856404', fontSize: '14px', lineHeight: '1.4' }}>
+                Los <strong>lotes son cantidades de materia prima en kilogramos</strong> que fluyen por las estaciones:<br/>
+                LAVADO (25kg) → CLASIFICACIÓN (25kg) → PELADO (25kg) → etc.<br/>
+                Cada operario procesa un lote antes de enviarlo a la siguiente estación.
+              </p>
+            </div>
+            
+            <div style={{ padding: '20px' }}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Cantidad Base por Orden de Producción:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={productionConfig.cantidad_base_orden}
+                    onChange={(e) => setProductionConfig({
+                      ...productionConfig, 
+                      cantidad_base_orden: parseInt(e.target.value) || 0
+                    })}
+                  />
+                  <small style={{ color: '#6c757d' }}>Cantidad estándar que se usará como base para las órdenes</small>
+                </div>
+                
+                <div className="form-group">
+                  <label>Producto de Referencia (para cálculo de peso):</label>
+                  <select
+                    value={skuSeleccionado}
+                    onChange={(e) => {
+                      const newSku = e.target.value;
+                      setSkuSeleccionado(newSku);
+                      calcularPesoDesdeProducto(newSku);
+                    }}
+                  >
+                    <option value="">Seleccionar producto...</option>
+                    {productosConBom.map(producto => (
+                      <option key={producto.sku} value={producto.sku}>
+                        {producto.nombre} ({producto.sku})
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{ color: '#6c757d' }}>Se usará el BOM real de este producto para calcular pesos</small>
+                </div>
+                
+                <div className="form-group">
+                  <label>Número de Lotes (en kg):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={productionConfig.numero_lotes_fijo}
+                    onChange={(e) => setProductionConfig({
+                      ...productionConfig, 
+                      numero_lotes_fijo: parseInt(e.target.value) || 1
+                    })}
+                  />
+                  <small style={{ color: '#6c757d' }}>En cuántos lotes de materia prima (kg) se dividirá el peso total de cada orden</small>
+                </div>
+              </div>
+              
+              {/* Vista previa del cálculo */}
+              <div style={{ 
+                marginTop: '20px', 
+                padding: '15px', 
+                background: '#e9ecef', 
+                borderRadius: '5px' 
+              }}>
+                <h4>📊 Vista Previa - Flujo de Materia Prima:</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+                  <div>
+                    <strong>Peso total orden:</strong> {((productionConfig.cantidad_base_orden * pesoUnitario) / 1000).toFixed(1)} kg
+                  </div>
+                  <div>
+                    <strong>Peso por lote:</strong> {(((productionConfig.cantidad_base_orden * pesoUnitario) / 1000) / productionConfig.numero_lotes_fijo).toFixed(1)} kg
+                  </div>
+                  <div>
+                    <strong>Unidades por lote:</strong> {Math.floor(productionConfig.cantidad_base_orden / productionConfig.numero_lotes_fijo)} unidades
+                  </div>
+                  <div>
+                    <strong>Total de lotes:</strong> {productionConfig.numero_lotes_fijo}
+                  </div>
+                  <div style={{ color: (productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo) > 0 ? '#dc3545' : '#28a745' }}>
+                    <strong>Unidades sobrantes:</strong> {productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo}
+                  </div>
+                  <div>
+                    <strong>Estado:</strong> 
+                    <span style={{ 
+                      color: (productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo) > 0 ? '#dc3545' : '#28a745',
+                      marginLeft: '5px'
+                    }}>
+                      {(productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo) > 0 ? '⚠️ Hay sobrante' : '✅ División exacta'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-actions" style={{ marginTop: '20px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowProductionConfig(false)}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={saveProductionConfig}
+                >
+                  <i className="fas fa-save"></i> Guardar Configuración
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
