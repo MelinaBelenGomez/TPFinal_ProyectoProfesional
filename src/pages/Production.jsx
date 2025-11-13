@@ -161,25 +161,25 @@ const Production = ({ user }) => {
     }
   };
 
-  const consumirOrden = async (idOp) => {
-    if (!confirm('¿Estás seguro de marcar esta orden como consumida?\n\nEsto liberará todas las reservas de materiales.')) {
+  const cancelarOrden = async (idOp) => {
+    if (!confirm('¿Estás seguro de cancelar esta orden?\n\nEsto liberará las reservas de materiales y cancelará la producción.')) {
       return;
     }
     
     try {
       setLoading(true);
       
-      await axios.put('http://localhost:8081/ordenes-produccion/consumir', {
+      await axios.put('http://localhost:8081/ordenes-produccion/cancelar', {
         idOp: idOp,
         responsable: user.username
       });
       
       await loadProductionOrders();
-      alert('✅ Orden marcada como consumida. Reservas liberadas.');
+      alert('✅ Orden cancelada. Reservas liberadas.');
       
     } catch (error) {
-      console.error('Error consumiendo orden:', error);
-      alert('❌ Error al consumir la orden');
+      console.error('Error cancelando orden:', error);
+      alert('❌ Error al cancelar la orden');
     } finally {
       setLoading(false);
     }
@@ -545,11 +545,11 @@ const Production = ({ user }) => {
                       )}
                       {order.estado === 'activa' && (
                         <button 
-                          className="btn btn-sm btn-success"
-                          onClick={() => consumirOrden(order.idOp)}
-                          title="Marcar como consumida"
+                          className="btn btn-sm btn-danger"
+                          onClick={() => cancelarOrden(order.idOp)}
+                          title="Cancelar orden y liberar materiales"
                         >
-                          <i className="fas fa-check"></i> Consumir
+                          <i className="fas fa-times"></i> Cancelar
                         </button>
                       )}
                     </div>
