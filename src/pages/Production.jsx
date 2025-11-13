@@ -203,19 +203,34 @@ const Production = ({ user }) => {
   };
 
   const activarOrdenManual = async (order) => {
+    // Usar la cantidad de la configuración de producción (no la de la orden individual)
+    const cantidadProducir = productionConfig.cantidad_base_orden;
+    
     // Obtener peso real del producto desde BOM
     let pesoUnitario = 500; // Por defecto 500g
     try {
       const bomResponse = await axios.get(`http://localhost:8081/bom/${order.sku}`);
       pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.cantPorUnidad || 0), 0);
+      if (pesoUnitario === 0) {
+        pesoUnitario = 500; // Fallback si BOM está vacío
+      }
     } catch (error) {
       console.warn('No se pudo obtener BOM, usando peso por defecto');
     }
     
     // Calcular cuántos lotes se crearán
-    const pesoTotalOrden = (order.cantidad * pesoUnitario) / 1000; // Convertir a kg
+    const pesoTotalOrden = (cantidadProducir * pesoUnitario) / 1000; // Convertir a kg
     const pesoLote = pesoTotalOrden / productionConfig.numero_lotes_fijo;
     const totalLotes = productionConfig.numero_lotes_fijo;
+    
+    console.log('Debug activación:', { 
+      cantidadOrden: order.cantidad,
+      cantidadProducir, 
+      pesoUnitario, 
+      pesoTotalOrden, 
+      pesoLote, 
+      totalLotes 
+    });
     
     // Validar si es un número excesivo de lotes
     let mensaje = `¿Activar la orden ${order.idOp}?\n\n`;
