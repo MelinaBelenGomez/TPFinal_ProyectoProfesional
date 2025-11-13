@@ -7,13 +7,18 @@ const WorkStation = ({ user }) => {
   const [stageInfo, setStageInfo] = useState(null);
   const [showWasteForm, setShowWasteForm] = useState(null);
   const [wasteData, setWasteData] = useState({
-    cantidadDesperdiciada: '',
     motivo: '',
-    observaciones: ''
+    observaciones: '',
+    materiales: [] // Array de {sku, nombre, desperdicio_gramos}
   });
+  const [bomMateriales, setBomMateriales] = useState([]);
+  const [loadingBom, setLoadingBom] = useState(false);
+  const [productionConfig, setProductionConfig] = useState(null);
+  const [bomData, setBomData] = useState({});
 
   useEffect(() => {
     if (user?.rol === 'OPERARIO' && user?.estacion_asignada) {
+      loadProductionConfig();
       loadLotes();
       loadStageInfo();
     }
@@ -25,12 +30,76 @@ const WorkStation = ({ user }) => {
       // Mapear estación del usuario a estación en BD
       const estacionBD = user.estacion_asignada === 'PELADO_TROZADO' ? 'PELADO' : user.estacion_asignada;
       const response = await axios.get(`http://localhost:8081/lotes/estacion/${estacionBD}`);
-      setLotes(response.data);
+      // Filtrar solo lotes activos (no cancelados)
+      const lotesData = response.data.filter(lote => 
+        lote.estado !== 'CANCELADO' && lote.estado !== 'cancelado'
+      );
+      
+      // Cargar datos de orden para cada lote único
+      const ordenesUnicas = [...new Set(lotesData.map(lote => lote.idOp))];
+      const ordenPromises = ordenesUnicas.map(async (idOp) => {
+        try {
+          const ordenResponse = await axios.get(`http://localhost:8081/ordenes-produccion/consultar/${idOp}`);
+          const bomResponse = await axios.get(`http://localhost:8081/bom/${ordenResponse.data.sku}`);
+          const pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.cantPorUnidad || 0), 0);
+          return { 
+            idOp, 
+            cantidad: ordenResponse.data.cantidad,
+            pesoUnitario 
+          };
+        } catch (error) {
+          console.error(`Error cargando datos para orden ${idOp}:`, error);
+          return { idOp, cantidad: 500, pesoUnitario: 500 };
+        }
+      });
+      
+      const ordenResults = await Promise.all(ordenPromises);
+      const ordenMap = {};
+      ordenResults.forEach(result => {
+        ordenMap[result.idOp] = result;
+      });
+      setBomData(ordenMap);
+      
+      setLotes(lotesData);
     } catch (error) {
       console.error('Error cargando lotes:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadProductionConfig = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/config-produccion');
+      setProductionConfig({
+        cantidad_base_orden: response.data.cantidadBaseOrden,
+        numero_lotes_fijo: response.data.numeroLotesFijo
+      });
+    } catch (error) {
+      console.error('Error cargando configuración:', error);
+      setProductionConfig({
+        cantidad_base_orden: 500,
+        numero_lotes_fijo: 10
+      });
+    }
+  };
+
+  const calculateBatchWeight = (lote) => {
+    if (!productionConfig || !bomData[lote.idOp]) {
+      return '0.0';
+    }
+    
+    const ordenData = bomData[lote.idOp];
+    const cantidad = ordenData.cantidad || 500;
+    const pesoUnitario = ordenData.pesoUnitario || 500;
+    const numeroLotes = productionConfig.numero_lotes_fijo || 10;
+    
+    console.log('Debug peso lote:', { loteId: lote.idLote, cantidad, pesoUnitario, numeroLotes, ordenData });
+    
+    const pesoTotalOrden = (cantidad * pesoUnitario) / 1000;
+    const pesoPorLote = pesoTotalOrden / numeroLotes;
+    
+    return pesoPorLote.toFixed(1);
   };
 
   const loadStageInfo = () => {
@@ -44,6 +113,38 @@ const WorkStation = ({ user }) => {
       'EMPAQUETADO': { title: 'Empaquetado', description: 'Empaquetar productos finales', color: '#fd7e14', icon: 'fas fa-box', nextStageDisplay: 'Finalizado' }
     };
     setStageInfo(estacionesInfo[user.estacion_asignada]);
+  };
+
+  const handleShowWasteForm = async (lote) => {
+    setLoadingBom(true);
+    try {
+      // Obtener la orden de producción para conseguir el SKU
+      const ordenResponse = await axios.get(`http://localhost:8081/ordenes-produccion/consultar/${lote.idOp}`);
+      const sku = ordenResponse.data.sku;
+      
+      // Obtener BOM del producto
+      const bomResponse = await axios.get(`http://localhost:8081/bom/${sku}`);
+      
+      // Inicializar materiales con desperdicio en 0
+      const materialesConDesperdicio = bomResponse.data.map(material => ({
+        sku: material.skuMaterial,
+        nombre: material.skuMaterial, // Podrías obtener el nombre del producto si lo necesitas
+        desperdicio_gramos: 0
+      }));
+      
+      setBomMateriales(materialesConDesperdicio);
+      setWasteData({
+        motivo: '',
+        observaciones: '',
+        materiales: materialesConDesperdicio
+      });
+      setShowWasteForm(lote);
+    } catch (error) {
+      console.error('Error cargando BOM:', error);
+      alert('❌ Error al cargar los materiales del producto');
+    } finally {
+      setLoadingBom(false);
+    }
   };
 
   const handleCompleteLote = async (lote) => {  
@@ -153,6 +254,7 @@ const WorkStation = ({ user }) => {
             <div style={{ marginTop: '15px', padding: '10px', background: '#f8f9fa', borderRadius: '5px', fontSize: '14px' }}>
               <p><strong>🔄 Flujo de trabajo:</strong></p>
               <p>Los lotes llegarán cuando el operario anterior complete su trabajo en la estación previa.</p>
+              <p><em>Nota: Los lotes cancelados no aparecen en esta lista.</em></p>
             </div>
           </div>
         ) : (
@@ -172,6 +274,10 @@ const WorkStation = ({ user }) => {
                     <div className="info-item">
                       <i className="fas fa-boxes"></i>
                       <span>Unidades: {lote.unidadesLote}</span>
+                    </div>
+                    <div className="info-item">
+                      <i className="fas fa-weight"></i>
+                      <span>Peso: {calculateBatchWeight(lote)} kg</span>
                     </div>
                     <div className="info-item">
                       <i className="fas fa-map-marker-alt"></i>
@@ -196,7 +302,7 @@ const WorkStation = ({ user }) => {
 
                   <button 
                     className="waste-btn" 
-                    onClick={() => setShowWasteForm(lote)}
+                    onClick={() => handleShowWasteForm(lote)}
                     disabled={loading}
                     style={{ backgroundColor: '#ffc107', color: '#000', marginLeft: '10px' }}
                   >
@@ -222,18 +328,33 @@ const WorkStation = ({ user }) => {
                 ×
               </button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              console.log("Desperdicio registrado:", {
-                idLote: showWasteForm.idLote,
-                idOp: showWasteForm.idOp,
-                estacion: showWasteForm.estacionActual,
-                operario: user.nombre,
-                ...wasteData
-              });
-              alert("✅ Desperdicio registrado exitosamente");
-              setShowWasteForm(null);
-              setWasteData({ cantidadDesperdiciada: '', motivo: '', observaciones: '' });
+              
+              try {
+                // Registrar desperdicio para cada material
+                for (const material of wasteData.materiales) {
+                  if (material.desperdicio_gramos > 0) {
+                    await axios.put('http://localhost:8081/material-por-op/registrar-desperdicio', {
+                      idOp: showWasteForm.idOp,
+                      sku: material.sku,
+                      cantidadDesperdiciada: material.desperdicio_gramos,
+                      motivo: wasteData.motivo,
+                      observaciones: wasteData.observaciones,
+                      estacion: user.estacion_asignada,
+                      operario: user.nombre
+                    });
+                  }
+                }
+                
+                alert("✅ Desperdicio registrado exitosamente");
+                setShowWasteForm(null);
+                setWasteData({ motivo: '', observaciones: '', materiales: [] });
+                setBomMateriales([]);
+              } catch (error) {
+                console.error('Error registrando desperdicio:', error);
+                alert('❌ Error al registrar desperdicio');
+              }
             }}>
               <div className="form-grid">
                 <div className="form-group">
@@ -256,17 +377,41 @@ const WorkStation = ({ user }) => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Cantidad Desperdiciada (kg):</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={wasteData.cantidadDesperdiciada}
-                    onChange={(e) => setWasteData({...wasteData, cantidadDesperdiciada: e.target.value})}
-                    placeholder="Ej: 2.5"
-                    required
-                  />
+                {/* Materiales del BOM */}
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Desperdicio por Material:</label>
+                  {loadingBom ? (
+                    <p>Cargando materiales...</p>
+                  ) : (
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}>
+                      {bomMateriales.map((material, index) => (
+                        <div key={material.sku} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>
+                          <div style={{ flex: 1, marginRight: '10px' }}>
+                            <strong>{material.sku}</strong>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="Gramos"
+                              value={material.desperdicio_gramos}
+                              onChange={(e) => {
+                                const nuevosMaterieles = [...wasteData.materiales];
+                                nuevosMaterieles[index].desperdicio_gramos = parseInt(e.target.value) || 0;
+                                setWasteData({...wasteData, materiales: nuevosMaterieles});
+                              }}
+                              style={{ width: '80px', padding: '4px' }}
+                            />
+                            <span>g</span>
+                            <span style={{ color: '#6c757d', fontSize: '12px' }}>
+                              ({(material.desperdicio_gramos / 1000).toFixed(3)} kg)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">

@@ -162,24 +162,41 @@ const Production = ({ user }) => {
   };
 
   const cancelarOrden = async (idOp) => {
-    if (!confirm('¿Estás seguro de cancelar esta orden?\n\nEsto liberará las reservas de materiales y cancelará la producción.')) {
+    if (!confirm(
+      '⚠️ ¿Estás seguro de cancelar esta orden?\n\n' +
+      'Esto hará lo siguiente:\n' +
+      '• Marcará la orden como CANCELADA\n' +
+      '• Cancelará todos los lotes en proceso\n' +
+      '• Liberará las reservas de materiales\n' +
+      '• Los lotes desaparecerán de las estaciones de trabajo\n\n' +
+      'Esta acción NO se puede deshacer.'
+    )) {
       return;
     }
     
     try {
       setLoading(true);
       
-      await axios.put('http://localhost:8081/ordenes-produccion/cancelar', {
+      const response = await axios.put('http://localhost:8081/ordenes-produccion/cancelar', {
         idOp: idOp,
         responsable: user.username
       });
       
       await loadProductionOrders();
-      alert('✅ Orden cancelada. Reservas liberadas.');
+      
+      // Mostrar resumen de lo que se canceló
+      const mensaje = response.data.mensaje || 
+        '✅ Orden cancelada exitosamente\n\n' +
+        '• Estado cambiado a CANCELADA\n' +
+        '• Lotes marcados como CANCELADO\n' +
+        '• Reservas de materiales liberadas\n' +
+        '• Operarios notificados del cambio';
+      
+      alert(mensaje);
       
     } catch (error) {
       console.error('Error cancelando orden:', error);
-      alert('❌ Error al cancelar la orden');
+      alert('❌ Error al cancelar la orden: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -489,6 +506,7 @@ const Production = ({ user }) => {
                 onChange={(e) => setSortBy(e.target.value)}
                 style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
               >
+                <option value="idOp">Por ID</option>
                 <option value="fecha_creacion">Por fecha</option>
                 <option value="codigo">Por código</option>
                 <option value="sku">Por SKU</option>
@@ -521,6 +539,37 @@ const Production = ({ user }) => {
                                       order.sku.toLowerCase().includes(orderFilter.toLowerCase());
                   const matchesStatus = statusFilter === 'all' || order.estado === statusFilter;
                   return matchesSearch && matchesStatus;
+                })
+                .sort((a, b) => {
+                  let aValue, bValue;
+                  
+                  switch(sortBy) {
+                    case 'idOp':
+                      aValue = a.idOp;
+                      bValue = b.idOp;
+                      break;
+                    case 'sku':
+                      aValue = a.sku;
+                      bValue = b.sku;
+                      break;
+                    case 'cantidad':
+                      aValue = a.cantidad;
+                      bValue = b.cantidad;
+                      break;
+                    case 'fecha_creacion':
+                      aValue = new Date(a.fechaCreacion || 0);
+                      bValue = new Date(b.fechaCreacion || 0);
+                      break;
+                    default:
+                      aValue = a.idOp;
+                      bValue = b.idOp;
+                  }
+                  
+                  if (typeof aValue === 'string') {
+                    return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                  }
+                  
+                  return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
                 })
                 .map((order) => (
                 <tr key={order.idOp}>

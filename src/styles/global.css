@@ -719,6 +719,16 @@ button:hover {
     color: #383d41;
 }
 
+.status-cancelada {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-canceled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
 .priority-low {
     background: #e8f5e9;
     color: #2e7d32;
