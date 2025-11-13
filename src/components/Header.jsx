@@ -24,8 +24,7 @@ const Header = ({ onLogout, user }) => {
         { icon: 'fas fa-seedling', text: 'Materia Prima', path: '/raw-materials' },
         { icon: 'fas fa-industry', text: 'Producción', path: '/production' },
         { icon: 'fas fa-chart-bar', text: 'Reportes', path: '/reports' },
-        { icon: 'fas fa-users', text: 'Usuarios', path: '/user-management' },
-        { icon: 'fas fa-plug', text: 'Test Backend', path: '/test-backend' }
+        { icon: 'fas fa-cogs', text: 'Ajustes', path: '/user-management' }
       ];
     } else if (user?.rol === 'JEFE_PRODUCCION') {
       return [

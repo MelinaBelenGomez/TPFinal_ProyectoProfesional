@@ -204,7 +204,6 @@ const RawMaterials = () => {
             style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
           >
             <option value="nombre">Ordenar por nombre</option>
-            <option value="categoria">Ordenar por categoría</option>
             <option value="stock_actual">Ordenar por stock</option>
             <option value="precio_unitario">Ordenar por precio</option>
           </select>

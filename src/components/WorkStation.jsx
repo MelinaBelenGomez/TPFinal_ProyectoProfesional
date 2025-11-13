@@ -335,7 +335,7 @@ const WorkStation = ({ user }) => {
                 // Registrar desperdicio para cada material
                 for (const material of wasteData.materiales) {
                   if (material.desperdicio_gramos > 0) {
-                    await axios.put('http://localhost:8081/material-por-op/registrar-desperdicio', {
+                    await axios.put('http://localhost:8081/material-op/registrar-desperdicio', {
                       idOp: showWasteForm.idOp,
                       sku: material.sku,
                       cantidadDesperdiciada: material.desperdicio_gramos,

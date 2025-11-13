@@ -203,7 +203,52 @@ const Production = ({ user }) => {
   };
 
   const activarOrdenManual = async (order) => {
-    if (!confirm(`¿Activar la orden ${order.idOp}?\n\nEsto reservará los materiales necesarios y creará los lotes para producción.`)) {
+    // Obtener peso real del producto desde BOM
+    let pesoUnitario = 500; // Por defecto 500g
+    try {
+      const bomResponse = await axios.get(`http://localhost:8081/bom/${order.sku}`);
+      pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.cantPorUnidad || 0), 0);
+    } catch (error) {
+      console.warn('No se pudo obtener BOM, usando peso por defecto');
+    }
+    
+    // Calcular cuántos lotes se crearán
+    const pesoTotalOrden = (order.cantidad * pesoUnitario) / 1000; // Convertir a kg
+    const pesoLote = pesoTotalOrden / productionConfig.numero_lotes_fijo;
+    const totalLotes = productionConfig.numero_lotes_fijo;
+    
+    // Validar si es un número excesivo de lotes
+    let mensaje = `¿Activar la orden ${order.idOp}?\n\n`;
+    mensaje += `📊 Información de lotes:\n`;
+    mensaje += `• Total de lotes: ${totalLotes}\n`;
+    mensaje += `• Peso por lote: ${pesoLote.toFixed(1)} kg\n`;
+    mensaje += `• Peso total: ${pesoTotalOrden.toFixed(1)} kg\n\n`;
+    
+    // Advertencias según cantidad de lotes y peso por lote
+    if (totalLotes > 100 || pesoLote < 1) {
+      mensaje += `⚠️ ADVERTENCIA CRÍTICA:\n`;
+      if (totalLotes > 100) {
+        mensaje += `• ${totalLotes} lotes pueden sobrecargar el sistema\n`;
+      }
+      if (pesoLote < 1) {
+        mensaje += `• Lotes muy pequeños (${pesoLote.toFixed(1)} kg) son ineficientes\n`;
+      }
+      mensaje += `Recomendación: Ajustar configuración en Ajustes.\n\n`;
+      mensaje += `¿Continuar de todas formas?`;
+    } else if (totalLotes > 50 || pesoLote < 2) {
+      mensaje += `⚠️ ADVERTENCIA:\n`;
+      if (totalLotes > 50) {
+        mensaje += `• ${totalLotes} lotes es una cantidad considerable\n`;
+      }
+      if (pesoLote < 2) {
+        mensaje += `• Lotes pequeños (${pesoLote.toFixed(1)} kg) pueden ser ineficientes\n`;
+      }
+      mensaje += `¿Continuar?`;
+    } else {
+      mensaje += `Esto reservará los materiales y creará ${totalLotes} lotes para producción.`;
+    }
+    
+    if (!confirm(mensaje)) {
       return;
     }
     
@@ -218,7 +263,7 @@ const Production = ({ user }) => {
       });
       
       await loadProductionOrders();
-      alert('✅ Orden activada exitosamente. Materiales reservados y lotes creados.');
+      alert(`✅ Orden activada exitosamente\n\n• Materiales reservados\n• ${totalLotes} lotes creados\n• Peso por lote: ${pesoLote.toFixed(1)} kg\n• Peso total: ${pesoTotalOrden.toFixed(1)} kg`);
       
     } catch (error) {
       console.error('Error activando orden:', error);
