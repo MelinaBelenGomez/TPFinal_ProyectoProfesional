@@ -22,7 +22,9 @@ const WorkStation = ({ user }) => {
   const loadLotes = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8081/lotes/estacion/${user.estacion_asignada}`);
+      // Mapear estación del usuario a estación en BD
+      const estacionBD = user.estacion_asignada === 'PELADO_TROZADO' ? 'PELADO' : user.estacion_asignada;
+      const response = await axios.get(`http://localhost:8081/lotes/estacion/${estacionBD}`);
       setLotes(response.data);
     } catch (error) {
       console.error('Error cargando lotes:', error);
