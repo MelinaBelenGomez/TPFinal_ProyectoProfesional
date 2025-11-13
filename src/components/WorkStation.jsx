@@ -1,46 +1,51 @@
 import { useState, useEffect } from 'react';
-import WorkflowService from '../services/workflowService';
+import axios from 'axios';
 
 const WorkStation = ({ user }) => {
-  const [orders, setOrders] = useState([]);
+  const [lotes, setLotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stageInfo, setStageInfo] = useState(null);
-  const [showErrorForm, setShowErrorForm] = useState(null);
-  const [errorData, setErrorData] = useState({
-    lote: '',
-    estado: '',
+  const [showWasteForm, setShowWasteForm] = useState(null);
+  const [wasteData, setWasteData] = useState({
+    cantidadDesperdiciada: '',
+    motivo: '',
     observaciones: ''
   });
 
   useEffect(() => {
     if (user?.rol === 'OPERARIO' && user?.estacion_asignada) {
-      loadOrders();
+      loadLotes();
       loadStageInfo();
     }
   }, [user]);
 
-  const loadOrders = async () => {
+  const loadLotes = async () => {
     setLoading(true);
     try {
-      // Cargar órdenes para la estación asignada del operario
-      const response = await WorkflowService.getOrdersForStation(user.estacion_asignada);
-      if (response.success) {
-        setOrders(response.data);
-      }
+      const response = await axios.get(`http://localhost:8081/lotes/estacion/${user.estacion_asignada}`);
+      setLotes(response.data);
     } catch (error) {
-      console.error('Error cargando órdenes:', error);
+      console.error('Error cargando lotes:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const loadStageInfo = () => {
-    const info = WorkflowService.getStageInfoByStation(user.estacion_asignada);
-    setStageInfo(info);
+    const estacionesInfo = {
+      'LAVADO': { title: 'Lavado', description: 'Lavar y desinfectar materia prima', color: '#007bff', icon: 'fas fa-tint', nextStageDisplay: 'Clasificación' },
+      'CLASIFICACION': { title: 'Clasificación', description: 'Clasificar por tamaño y calidad', color: '#28a745', icon: 'fas fa-sort', nextStageDisplay: 'Pelado' },
+      'PELADO': { title: 'Pelado', description: 'Pelar y preparar productos', color: '#ffc107', icon: 'fas fa-cut', nextStageDisplay: 'Escurrido' },
+      'PELADO_TROZADO': { title: 'Pelado y Trozado', description: 'Pelar y trozar productos', color: '#ffc107', icon: 'fas fa-cut', nextStageDisplay: 'Escurrido' },
+      'ESCURRIDO': { title: 'Escurrido', description: 'Escurrir exceso de agua', color: '#17a2b8', icon: 'fas fa-filter', nextStageDisplay: 'Congelación' },
+      'CONGELACION': { title: 'Congelación', description: 'Congelar productos', color: '#6f42c1', icon: 'fas fa-snowflake', nextStageDisplay: 'Empaquetado' },
+      'EMPAQUETADO': { title: 'Empaquetado', description: 'Empaquetar productos finales', color: '#fd7e14', icon: 'fas fa-box', nextStageDisplay: 'Finalizado' }
+    };
+    setStageInfo(estacionesInfo[user.estacion_asignada]);
   };
 
-  const handleCompleteStage = async (order) => {  
-    const confirmMessage = `¿Confirmar que completaste la etapa de ${stageInfo.title} para la orden ${order.codigo}?`;
+  const handleCompleteLote = async (lote) => {  
+    const confirmMessage = `¿Confirmar que completaste el lote ${lote.idLote} en ${stageInfo.title}?`;
     
     if (!window.confirm(confirmMessage)) {
       return;
@@ -49,23 +54,12 @@ const WorkStation = ({ user }) => {
     setLoading(true);
     
     try {
-      const response = await WorkflowService.completeStage({
-        id_op: order.id_op,
-        estado_actual: order.estado,
-        usuario_operario: user.username,
-        observaciones: ''
-      });
-
-      if (response.success) {
-        alert(`✅ ${response.message}`);
-        // Recargar órdenes para actualizar la lista
-        await loadOrders();
-      } else {
-        alert(`❌ Error: ${response.message}`);
-      }
+      await axios.put(`http://localhost:8081/lotes/completar/${lote.idLote}?idOperario=${user.id}`);
+      alert(`✅ Lote completado y enviado a ${stageInfo.nextStageDisplay}`);
+      await loadLotes();
     } catch (error) {
-      console.error('Error completando etapa:', error);
-      alert('❌ Error al completar la etapa');
+      console.error('Error completando lote:', error);
+      alert('❌ Error al completar el lote');
     } finally {
       setLoading(false);
     }
@@ -120,16 +114,14 @@ const WorkStation = ({ user }) => {
         </div>
       </div>
 
-      
-
       <div className="workstation-stats">
         <div className="stat-card card">
           <div className="stat-icon">
             <i className="fas fa-clipboard-list"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{orders.length}</div>
-            <div className="stat-label">Órdenes Pendientes</div>
+            <div className="stat-value">{lotes.length}</div>
+            <div className="stat-label">Lotes Pendientes</div>
           </div>
         </div>
 
@@ -138,169 +130,190 @@ const WorkStation = ({ user }) => {
             <i className="fas fa-arrow-right"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{stageInfo.nextStage}</div>
+            <div className="stat-value">{stageInfo.nextStageDisplay}</div>
             <div className="stat-label">Siguiente Etapa</div>
           </div>
         </div>
       </div>
 
-     
       <div className="orders-section">
-        <h3>Órdenes en tu Estación</h3>
+        <h3>Lotes en tu Estación</h3>
         
         {loading ? (
           <div className="loading-message">
-            <i className="fas fa-spinner fa-spin"></i> Cargando órdenes...
+            <i className="fas fa-spinner fa-spin"></i> Cargando lotes...
           </div>
-        ) : orders.length === 0 ? (
+        ) : lotes.length === 0 ? (
           <div className="empty-message card">
             <i className="fas fa-check-circle"></i>
             <h4>¡Excelente trabajo!</h4>
-            <p>No hay órdenes pendientes en tu estación.</p>
+            <p>No hay lotes pendientes en tu estación de {stageInfo.title}.</p>
+            <div style={{ marginTop: '15px', padding: '10px', background: '#f8f9fa', borderRadius: '5px', fontSize: '14px' }}>
+              <p><strong>🔄 Flujo de trabajo:</strong></p>
+              <p>Los lotes llegarán cuando el operario anterior complete su trabajo en la estación previa.</p>
+            </div>
           </div>
         ) : (
           <div className="orders-grid">
-            {orders.map((order) => (
-              <div key={order.id_op} className="order-card card">
+            {lotes.map((lote) => (
+              <div key={lote.idLote} className="order-card card">
                 <div className="order-header">
-                  <div className="order-code">{order.codigo}</div>
+                  <div className="order-code">Lote #{lote.idLote}</div>
                   <div className="order-status">
-                    <span className="status-badge status-warning">{order.estado}</span>
+                    <span className="status-badge status-warning">{lote.estado}</span>
                   </div>
                 </div>
                 
                 <div className="order-details">
-                  <h4>{order.producto_nombre}</h4>
+                  <h4>Orden #{lote.idOp}</h4>
                   <div className="order-info">
                     <div className="info-item">
-                      <i className="fas fa-barcode"></i>
-                      <span>SKU: {order.sku}</span>
+                      <i className="fas fa-boxes"></i>
+                      <span>Unidades: {lote.unidadesLote}</span>
                     </div>
                     <div className="info-item">
-                      <i className="fas fa-boxes"></i>
-                      <span>Cantidad: {order.cantidad} unidades</span>
+                      <i className="fas fa-map-marker-alt"></i>
+                      <span>Estación: {lote.estacionActual}</span>
                     </div>
                     <div className="info-item">
                       <i className="fas fa-calendar"></i>
-                      <span>Creada: {new Date(order.fecha_creacion).toLocaleDateString('es-ES')}</span>
+                      <span>Inicio: {new Date(lote.fechaInicio).toLocaleDateString('es-ES')}</span>
                     </div>
                   </div>
                 </div>
+                
                 <div className="order-actions">
-                <button 
-                  className="complete-btn"
-                  onClick={() => handleCompleteStage(order)}
-                  disabled={loading}
-                >
-                  <i className="fas fa-check"></i>
-                  Completar {stageInfo.title}
-                </button>
-
-                {/* Botón de reportar error, solo para ciertos perfiles */}
-                {(
                   <button 
-                    className="error-btn" 
-                    onClick={() => setShowErrorForm(order)}
+                    className="complete-btn"
+                    onClick={() => handleCompleteLote(lote)}
                     disabled={loading}
                   >
-                    ⚠️ Reportar Error
+                    <i className="fas fa-check"></i>
+                    Completar {stageInfo.title}
                   </button>
 
-                )}
-
-
-
-                {showErrorForm && (
-                  <div className="modal-overlay">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h3>Reportar Error - Orden {showErrorForm.codigo}</h3>
-                        <button 
-                          className="btn-close"
-                          onClick={() => setShowErrorForm(null)}
-                        >
-                          ×
-                        </button>
-                      </div>
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        console.log("Datos de error reportado:", {
-                          orden: showErrorForm.codigo,
-                          ...errorData
-                        });
-                        alert("✅ Error reportado");
-                        setShowErrorForm(null);
-                        setErrorData({ lote: '', estado: '', observaciones: '' });
-                      }}>
-                        <div className="form-grid">
-                          <div className="form-group">
-                            <label>Orden:</label>
-                            <input type="text" value={showErrorForm.codigo} disabled />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Lote:</label>
-                            <input
-                              type="text"
-                              value={errorData.lote}
-                              onChange={(e) => setErrorData({...errorData, lote: e.target.value})}
-                              required
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Estado:</label>
-                            <select
-                              value={errorData.estado}
-                              onChange={(e) => setErrorData({...errorData, estado: e.target.value})}
-                              required
-                            >
-                              <option value="">Seleccionar...</option>
-                              <option value="cancelado">Cancelado</option>
-                              <option value="pausado">Pausado</option>
-                            </select>
-                          </div>
-
-                          <div className="form-group">
-                            <label>Observaciones:</label>
-                            <textarea
-                              value={errorData.observaciones}
-                              onChange={(e) => setErrorData({...errorData, observaciones: e.target.value})}
-                              rows="3"
-                            ></textarea>
-                          </div>
-                        </div>
-
-                        <div className="form-actions">
-                          <button 
-                            type="button" 
-                            className="btn btn-secondary" 
-                            onClick={() => setShowErrorForm(null)}
-                          >
-                            Cancelar
-                          </button>
-                          <button 
-                            type="submit" 
-                            className="btn btn-primary"
-                          >
-                            Guardar y Salir
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                  
-                )}
-
-
-              </div>
-
-
+                  <button 
+                    className="waste-btn" 
+                    onClick={() => setShowWasteForm(lote)}
+                    disabled={loading}
+                    style={{ backgroundColor: '#ffc107', color: '#000', marginLeft: '10px' }}
+                  >
+                    🗑️ Registrar Desperdicio
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      
+      {/* Modal Registrar Desperdicio */}
+      {showWasteForm && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>🗑️ Registrar Desperdicio - Lote #{showWasteForm.idLote}</h3>
+              <button 
+                className="btn-close"
+                onClick={() => setShowWasteForm(null)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              console.log("Desperdicio registrado:", {
+                idLote: showWasteForm.idLote,
+                idOp: showWasteForm.idOp,
+                estacion: showWasteForm.estacionActual,
+                operario: user.nombre,
+                ...wasteData
+              });
+              alert("✅ Desperdicio registrado exitosamente");
+              setShowWasteForm(null);
+              setWasteData({ cantidadDesperdiciada: '', motivo: '', observaciones: '' });
+            }}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Lote:</label>
+                  <input 
+                    type="text" 
+                    value={`Lote #${showWasteForm.idLote} - Orden #${showWasteForm.idOp}`} 
+                    disabled 
+                    style={{backgroundColor: '#f8f9fa'}}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Estación:</label>
+                  <input 
+                    type="text" 
+                    value={showWasteForm.estacionActual} 
+                    disabled 
+                    style={{backgroundColor: '#f8f9fa'}}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Cantidad Desperdiciada (kg):</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={wasteData.cantidadDesperdiciada}
+                    onChange={(e) => setWasteData({...wasteData, cantidadDesperdiciada: e.target.value})}
+                    placeholder="Ej: 2.5"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Motivo del Desperdicio:</label>
+                  <select
+                    value={wasteData.motivo}
+                    onChange={(e) => setWasteData({...wasteData, motivo: e.target.value})}
+                    required
+                  >
+                    <option value="">Seleccionar motivo...</option>
+                    <option value="producto_defectuoso">Producto defectuoso</option>
+                    <option value="contaminacion">Contaminación</option>
+                    <option value="error_proceso">Error en el proceso</option>
+                    <option value="caducidad">Producto caducado</option>
+                    <option value="accidente">Accidente/Derrame</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Observaciones:</label>
+                  <textarea
+                    value={wasteData.observaciones}
+                    onChange={(e) => setWasteData({...wasteData, observaciones: e.target.value})}
+                    rows="3"
+                    placeholder="Describe los detalles del desperdicio..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowWasteForm(null)}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                >
+                  💾 Registrar Desperdicio
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

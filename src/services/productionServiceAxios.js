@@ -352,7 +352,7 @@ class ProductionServiceAxios {
       
       // 4. Agregar stock inicial
       if (materialData.stock_inicial > 0) {
-        await axios.put(`${this.baseURL}/stock/incrementar`, {
+        await axios.put(`${this.baseURL}/stock/ingresar`, {
           sku: materialData.codigo,
           idAlmacen: materialData.idAlmacen,
           cantidad: materialData.stock_inicial
@@ -371,10 +371,29 @@ class ProductionServiceAxios {
     }
   }
 
+  // 🔗 CONECTADO AL BACKEND: Habilitar producto en almacén
+  static async habilitarProducto(sku, idAlmacen) {
+    try {
+      await axios.put(`${this.baseURL}/stock/habilitar-producto`, {
+        sku: sku,
+        idAlmacen: idAlmacen
+      });
+      return {
+        success: true,
+        message: 'Producto habilitado en almacén'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al habilitar producto'
+      };
+    }
+  }
+
   // 🔗 CONECTADO AL BACKEND: Incrementar stock
   static async incrementarStock(sku, idAlmacen, cantidad) {
     try {
-      await axios.put(`${this.baseURL}/stock/incrementar`, {
+      await axios.put(`${this.baseURL}/stock/ingresar`, {
         sku: sku,
         idAlmacen: idAlmacen,
         cantidad: cantidad

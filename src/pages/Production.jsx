@@ -144,39 +144,80 @@ const Production = ({ user }) => {
       // Recargar órdenes para mostrar la nueva
       await loadProductionOrders();
       
-      // Preguntar si desea comenzar la producción inmediatamente
-      const comenzarProduccion = window.confirm(
+      alert(
         `✅ Orden creada exitosamente\n\n` +
         `SKU: ${product.sku}\n` +
         `Producto: ${product.name}\n` +
         `Cantidad: ${cantidad} ${product.unidadMedida}\n` +
-        `Peso total: ${calculateWeight(cantidad, productionConfig.sku_referencia)} kg\n` +
-        `Lotes: ${productionConfig.numero_lotes_fijo}\n` +
-        `Responsable: ${user.username}\n\n` +
-        `¿Deseas comenzar con la producción ahora?\n` +
-        `(Esto reservará los materiales necesarios y enviará la orden a la estación de lavado)`
+        `Estado: PLANIFICADA\n\n` +
+        `Para comenzar la producción, usa el botón "Activar" en la tabla de órdenes.`
       );
-      
-      if (comenzarProduccion) {
-        // Buscar la orden recién creada para obtener su ID
-        const updatedOrders = await axios.get('http://localhost:8081/ordenes-produccion/consultar/todas');
-        const newOrder = updatedOrders.data.find(order => 
-          order.sku === product.sku && 
-          order.cantidad === cantidad && 
-          order.responsable === user.username &&
-          order.estado === 'planificada'
-        );
-        
-        if (newOrder) {
-          await activarOrden(newOrder, product);
-        } else {
-          alert('⚠️ No se pudo encontrar la orden recién creada para activarla');
-        }
-      }
       
     } catch (error) {
       console.error('Error creando orden:', error);
       alert('❌ Error al crear la orden de producción');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const consumirOrden = async (idOp) => {
+    if (!confirm('¿Estás seguro de marcar esta orden como consumida?\n\nEsto liberará todas las reservas de materiales.')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      await axios.put('http://localhost:8081/ordenes-produccion/consumir', {
+        idOp: idOp,
+        responsable: user.username
+      });
+      
+      await loadProductionOrders();
+      alert('✅ Orden marcada como consumida. Reservas liberadas.');
+      
+    } catch (error) {
+      console.error('Error consumiendo orden:', error);
+      alert('❌ Error al consumir la orden');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activarOrdenManual = async (order) => {
+    if (!confirm(`¿Activar la orden ${order.idOp}?\n\nEsto reservará los materiales necesarios y creará los lotes para producción.`)) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      await axios.put('http://localhost:8081/ordenes-produccion/activar', {
+        idOp: order.idOp,
+        responsable: user.username
+      }, {
+        timeout: 60000 // 60 segundos
+      });
+      
+      await loadProductionOrders();
+      alert('✅ Orden activada exitosamente. Materiales reservados y lotes creados.');
+      
+    } catch (error) {
+      console.error('Error activando orden:', error);
+      
+      // Recargar órdenes por si acaso se activó en el backend
+      await loadProductionOrders();
+      
+      // Verificar si realmente se activó
+      const updatedOrders = await axios.get('http://localhost:8081/ordenes-produccion/consultar/todas');
+      const activatedOrder = updatedOrders.data.find(o => o.idOp === order.idOp && o.estado === 'activa');
+      
+      if (activatedOrder) {
+        alert('✅ Orden activada exitosamente (el proceso tardó más de lo esperado)');
+      } else {
+        alert('❌ Error al activar la orden: ' + (error.response?.data?.message || error.message));
+      }
     } finally {
       setLoading(false);
     }
@@ -196,7 +237,9 @@ const Production = ({ user }) => {
       
       console.log('Datos de activación:', activateData); // Debug
       
-      await axios.put('http://localhost:8081/ordenes-produccion/activar', activateData);
+      await axios.put('http://localhost:8081/ordenes-produccion/activar', activateData, {
+        timeout: 30000 // 30 segundos
+      });
       
       // Recargar órdenes para mostrar el cambio de estado
       await loadProductionOrders();
@@ -468,6 +511,7 @@ const Production = ({ user }) => {
                 <th>Estado</th>
                 <th>Responsable</th>
                 <th>Almacén</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -488,6 +532,28 @@ const Production = ({ user }) => {
                   </td>
                   <td>{order.responsable}</td>
                   <td>{order.idAlmacen}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      {order.estado === 'planificada' && (
+                        <button 
+                          className="btn btn-sm btn-primary"
+                          onClick={() => activarOrdenManual(order)}
+                          title="Activar orden y reservar materiales"
+                        >
+                          <i className="fas fa-play"></i> Activar
+                        </button>
+                      )}
+                      {order.estado === 'activa' && (
+                        <button 
+                          className="btn btn-sm btn-success"
+                          onClick={() => consumirOrden(order.idOp)}
+                          title="Marcar como consumida"
+                        >
+                          <i className="fas fa-check"></i> Consumir
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

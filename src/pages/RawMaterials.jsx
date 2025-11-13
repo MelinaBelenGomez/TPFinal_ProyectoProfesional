@@ -432,13 +432,20 @@ const RawMaterials = () => {
                   <label>Materia Prima (SKU):</label>
                   <select
                     value={stockData.sku}
-                    onChange={(e) => setStockData({...stockData, sku: e.target.value})}
+                    onChange={(e) => {
+                      const selectedMaterial = materials.find(m => m.codigo === e.target.value);
+                      setStockData({
+                        ...stockData, 
+                        sku: e.target.value,
+                        idAlmacen: selectedMaterial ? selectedMaterial.idAlmacen : ''
+                      });
+                    }}
                     required
                   >
                     <option value="">Seleccionar materia prima...</option>
                     {materials.map(material => (
                       <option key={material.codigo} value={material.codigo}>
-                        {material.codigo} - {material.nombre}
+                        {material.codigo} - {material.nombre} (Almacén: {material.almacen})
                       </option>
                     ))}
                   </select>
@@ -449,14 +456,31 @@ const RawMaterials = () => {
                     value={stockData.idAlmacen}
                     onChange={(e) => setStockData({...stockData, idAlmacen: e.target.value})}
                     required
+                    disabled={!stockData.sku}
                   >
                     <option value="">Seleccionar almacén...</option>
-                    {almacenes.filter(a => a.estado === 'ACTIVO').map(almacen => (
-                      <option key={almacen.idAlmacen} value={almacen.idAlmacen}>
-                        {almacen.nombre} - {centros.find(c => c.idCentro === almacen.idCentro)?.sucursal}
-                      </option>
-                    ))}
+                    {stockData.sku ? (
+                      // Solo mostrar almacenes donde existe esta materia prima
+                      materials
+                        .filter(m => m.codigo === stockData.sku)
+                        .map(material => {
+                          const almacen = almacenes.find(a => a.idAlmacen === material.idAlmacen);
+                          const centro = centros.find(c => c.idCentro === almacen?.idCentro);
+                          return (
+                            <option key={almacen.idAlmacen} value={almacen.idAlmacen}>
+                              {almacen.nombre} - {centro?.sucursal} (Stock actual: {material.stock_actual} {material.unidad})
+                            </option>
+                          );
+                        })
+                    ) : (
+                      <option value="" disabled>Primero selecciona una materia prima</option>
+                    )}
                   </select>
+                  {stockData.sku && materials.filter(m => m.codigo === stockData.sku).length === 0 && (
+                    <small style={{color: '#dc3545', fontSize: '12px'}}>
+                      Esta materia prima no existe en ningún almacén. Primero créala.
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Cantidad:</label>
