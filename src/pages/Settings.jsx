@@ -825,9 +825,6 @@ const Settings = () => {
                     <strong>Peso por lote:</strong> {(((productionConfig.cantidad_base_orden * pesoUnitario) / 1000) / productionConfig.numero_lotes_fijo).toFixed(1)} kg
                   </div>
                   <div>
-                    <strong>Unidades por lote:</strong> {Math.floor(productionConfig.cantidad_base_orden / productionConfig.numero_lotes_fijo)} unidades
-                  </div>
-                  <div>
                     <strong>Total de lotes:</strong> {productionConfig.numero_lotes_fijo}
                   </div>
                   <div style={{ color: (productionConfig.cantidad_base_orden % productionConfig.numero_lotes_fijo) > 0 ? '#dc3545' : '#28a745' }}>

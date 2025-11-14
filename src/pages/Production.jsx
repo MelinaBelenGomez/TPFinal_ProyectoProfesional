@@ -34,6 +34,9 @@ const Production = ({ user }) => {
       }));
       setProducts(productsWithUI);
       
+      // Cargar pesos de productos inmediatamente
+      await loadProductWeightsForProducts(productsWithUI);
+      
       // Cargar configuración de producción
       await loadProductionConfig();
     } catch (error) {
@@ -365,14 +368,27 @@ const Production = ({ user }) => {
     }
   };
   
-  const calculateWeight = (cantidad, skuReferencia) => {
-    // Simular peso unitario basado en BOM
-    const pesosPorSku = {
-      'MIX-BERRIES-500G': 0.5, // 500g
-      'MIX-TROPICAL-1KG': 1.0  // 1000g
-    };
-    const pesoUnitario = pesosPorSku[skuReferencia] || 0.5;
+  const [productWeights, setProductWeights] = useState({});
+
+  const calculateWeight = (cantidad, sku) => {
+    const pesoUnitario = productWeights[sku] || 0.5; // kg por unidad
     return (cantidad * pesoUnitario).toFixed(1);
+  };
+
+  const loadProductWeightsForProducts = async (productsList) => {
+    const weights = {};
+    for (const product of productsList) {
+      try {
+        const bomResponse = await axios.get(`http://localhost:8081/bom/${product.sku}`);
+        const pesoGramos = bomResponse.data.reduce((total, item) => total + (item.canPorUnidad || 0), 0);
+        weights[product.sku] = pesoGramos / 1000; // Convertir a kg
+        console.log(`Peso cargado para ${product.sku}: ${weights[product.sku]} kg`);
+      } catch (error) {
+        weights[product.sku] = 0.5; // Peso por defecto 500g
+        console.log(`Peso por defecto para ${product.sku}: 0.5 kg`);
+      }
+    }
+    setProductWeights(weights);
   };
 
 
@@ -429,7 +445,7 @@ const Production = ({ user }) => {
                 <strong>Cantidad por orden:</strong> {productionConfig.cantidad_base_orden} unidades
               </div>
               <div>
-                <strong>Peso por orden:</strong> {calculateWeight(productionConfig.cantidad_base_orden, productionConfig.sku_referencia)} kg
+                <strong>Peso por orden:</strong> Varía por producto
               </div>
               <div>
                 <strong>Número de lotes:</strong> {productionConfig.numero_lotes_fijo} lotes
@@ -535,7 +551,7 @@ const Production = ({ user }) => {
                         color: '#007bff',
                         fontWeight: 'bold'
                       }}>
-                        {calculateWeight(productionConfig.cantidad_base_orden, productionConfig.sku_referencia)} kg
+                        {calculateWeight(productionConfig.cantidad_base_orden, product.sku)} kg
                       </span>
                       <span style={{ 
                         marginLeft: '8px',
