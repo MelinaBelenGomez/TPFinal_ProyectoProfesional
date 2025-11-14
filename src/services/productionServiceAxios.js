@@ -39,10 +39,24 @@ class ProductionServiceAxios {
   // CONECTADO AL BACKEND: Crear producto
   static async createProduct(productData) {
     try {
-      // Axios básico: axios.post(url, data)
+      // Obtener el nombre de la categoría
+      const categoriaObj = await axios.get(`${this.baseURL}/categorias`);
+      const categoriaEncontrada = categoriaObj.data.find(cat => 
+        cat.idCategoria == productData.categoria || cat.nombre === productData.categoria
+      );
+      const categoriaNombre = categoriaEncontrada ? categoriaEncontrada.nombre : productData.categoria;
+      
+      console.log('Datos enviados al backend:', {
+        sku: productData.sku,
+        nombreCategoria: categoriaNombre,
+        nombre: productData.nombre,
+        unidadMedida: productData.unidad_medida,
+        descripcion: productData.descripcion
+      });
+      
       await axios.post(`${this.baseURL}/productos`, {
         sku: productData.sku,
-        nombreCategoria: productData.categoria,
+        nombreCategoria: categoriaNombre,
         nombre: productData.nombre,
         unidadMedida: productData.unidad_medida,
         descripcion: productData.descripcion
@@ -53,9 +67,10 @@ class ProductionServiceAxios {
         message: 'Producto creado exitosamente'
       };
     } catch (error) {
+      console.error('Error creando producto:', error.response?.data || error.message);
       return {
         success: false,
-        message: 'Error al crear producto'
+        message: error.response?.data || 'Error al crear producto'
       };
     }
   }
@@ -322,17 +337,22 @@ class ProductionServiceAxios {
   // CONECTADO AL BACKEND: Crear materia prima completa
   static async createRawMaterial(materialData) {
     try {
-      // 1. Crear producto
-      const productResponse = await this.createProduct({
-        sku: materialData.codigo,
-        nombre: materialData.nombre,
-        descripcion: materialData.descripcion || `${materialData.categoria}`,
-        unidad_medida: materialData.unidad,
-        categoria: materialData.categoria
-      });
+      // 1. Verificar si el producto ya existe
+      const existingProduct = await this.getProductBySku(materialData.codigo);
       
-      if (!productResponse.success) {
-        return productResponse;
+      // 2. Solo crear producto si no existe
+      if (!existingProduct.success) {
+        const productResponse = await this.createProduct({
+          sku: materialData.codigo,
+          nombre: materialData.nombre,
+          descripcion: materialData.descripcion || `${materialData.categoria}`,
+          unidad_medida: materialData.unidad,
+          categoria: materialData.categoria
+        });
+        
+        if (!productResponse.success) {
+          return productResponse;
+        }
       }
       
       // 2. Habilitar en almacén
