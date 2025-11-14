@@ -48,6 +48,7 @@ const Production = ({ user }) => {
   const loadProductionOrders = async () => {
     try {
       const response = await axios.get('http://localhost:8081/ordenes-produccion/consultar/todas');
+      console.log('Órdenes cargadas:', response.data); // Debug
       setProductionOrders(response.data);
     } catch (error) {
       console.error('Error cargando órdenes:', error);
@@ -377,6 +378,35 @@ const Production = ({ user }) => {
 
 
   return (
+    <>
+      <style>{`
+        .status-badge {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: bold;
+          color: white;
+        }
+        .status-planificada {
+          background-color: #ffc107;
+          color: black;
+        }
+        .status-activa {
+          background-color: #28a745;
+        }
+        .status-consumida {
+          background-color: #6f42c1;
+        }
+        .status-pausada {
+          background-color: #fd7e14;
+        }
+        .status-cancelada {
+          background-color: #dc3545;
+        }
+        .status-unknown {
+          background-color: #6c757d;
+        }
+      `}</style>
     <div className="production-container">
       <div className="production-header">
         <h2>Órdenes de Producción</h2>
@@ -428,7 +458,7 @@ const Production = ({ user }) => {
             <i className="fas fa-clock"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{productionOrders.filter(o => o.estado === 'planificada').length}</div>
+            <div className="stat-value">{productionOrders.filter(o => o.estado?.toLowerCase() === 'planificada').length}</div>
             <div className="stat-label">Planificadas</div>
           </div>
         </div>
@@ -438,7 +468,7 @@ const Production = ({ user }) => {
             <i className="fas fa-cogs"></i>
           </div>
           <div className="stat-info">
-            <div className="stat-value">{productionOrders.filter(o => o.estado === 'activa').length}</div>
+            <div className="stat-value">{productionOrders.filter(o => o.estado?.toLowerCase() === 'activa').length}</div>
             <div className="stat-label">Activas</div>
           </div>
         </div>
@@ -597,7 +627,7 @@ const Production = ({ user }) => {
                 .filter(order => {
                   const matchesSearch = order.idOp.toString().includes(orderFilter.toLowerCase()) ||
                                       order.sku.toLowerCase().includes(orderFilter.toLowerCase());
-                  const matchesStatus = statusFilter === 'all' || order.estado === statusFilter;
+                  const matchesStatus = statusFilter === 'all' || order.estado?.toLowerCase() === statusFilter.toLowerCase();
                   return matchesSearch && matchesStatus;
                 })
                 .sort((a, b) => {
@@ -637,13 +667,19 @@ const Production = ({ user }) => {
                   <td className="sku-code">{order.sku}</td>
                   <td>{order.cantidad}</td>
                   <td>
-                    <span className={`status-badge status-${order.estado}`}>{order.estado.toUpperCase()}</span>
+                    {order.estado ? (
+                      <span className={`status-badge status-${order.estado.toLowerCase()}`}>
+                        {order.estado.toUpperCase()}
+                      </span>
+                    ) : (
+                      <span className="status-badge status-unknown">SIN ESTADO</span>
+                    )}
                   </td>
                   <td>{order.responsable}</td>
                   <td>{order.idAlmacen}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                      {order.estado === 'planificada' && (
+                      {order.estado?.toLowerCase() === 'planificada' && (
                         <button 
                           className="btn btn-sm btn-primary"
                           onClick={() => activarOrdenManual(order)}
@@ -652,7 +688,7 @@ const Production = ({ user }) => {
                           <i className="fas fa-play"></i> Activar
                         </button>
                       )}
-                      {order.estado === 'activa' && (
+                      {order.estado?.toLowerCase() === 'activa' && (
                         <button 
                           className="btn btn-sm btn-danger"
                           onClick={() => cancelarOrden(order.idOp)}
@@ -670,6 +706,7 @@ const Production = ({ user }) => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
