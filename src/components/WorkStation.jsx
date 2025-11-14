@@ -344,21 +344,25 @@ const WorkStation = ({ user }) => {
               e.preventDefault();
               
               try {
-                // Registrar desperdicio para cada material
-                for (const material of wasteData.materiales) {
-                  if (material.desperdicio_gramos > 0) {
-                    const payload = {
-                      idOp: showWasteForm.idOp,
-                      sku: material.sku,
-                      cantidadDesperdiciada: material.desperdicio_gramos,
-                      motivo: wasteData.motivo,
-                      estacion: user.estacion_asignada,
-                      operario: user.nombre || user.username
-                    };
-                    console.log('Enviando desperdicio:', payload);
-                    await axios.put('http://localhost:8081/material-op/registrar-desperdicio', payload);
-                  }
+                // Filtrar solo materiales con desperdicio
+                const materialesConDesperdicio = wasteData.materiales.filter(m => m.desperdicio_gramos > 0);
+                
+                if (materialesConDesperdicio.length === 0) {
+                  alert('⚠️ Debe ingresar al menos un desperdicio');
+                  return;
                 }
+                
+                // Enviar todos los materiales en una sola petición
+                const payload = {
+                  idOp: showWasteForm.idOp,
+                  motivo: wasteData.motivo,
+                  estacion: user.estacion_asignada,
+                  operario: user.nombre || user.username,
+                  materiales: materialesConDesperdicio
+                };
+                
+                console.log('Enviando desperdicios:', payload);
+                await axios.put('http://localhost:8081/material-op/registrar-desperdicios-lote', payload);
                 
                 alert("✅ Desperdicio registrado exitosamente");
                 setShowWasteForm(null);

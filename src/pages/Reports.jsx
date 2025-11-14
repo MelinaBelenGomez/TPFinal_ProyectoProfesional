@@ -1,143 +1,171 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const Reports = () => {
-  const [salesData, setSalesData] = useState([
-    { month: 'Ene', sales: 85 },
-    { month: 'Feb', sales: 92 },
-    { month: 'Mar', sales: 78 },
-    { month: 'Abr', sales: 95 },
-    { month: 'May', sales: 88 },
-    { month: 'Jun', sales: 102 }
-  ]);
-
-  const [wastePercentage, setWastePercentage] = useState(12);
-  const [productionLevel, setProductionLevel] = useState(87);
+  const [ordenesReporte, setOrdenesReporte] = useState([]);
+  const [estadisticasGlobales, setEstadisticasGlobales] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWastePercentage(prev => Math.max(5, Math.min(20, prev + (Math.random() - 0.5) * 2)));
-      setProductionLevel(prev => Math.max(70, Math.min(100, prev + (Math.random() - 0.5) * 3)));
-    }, 3000);
-
-    return () => clearInterval(interval);
+    loadReportes();
   }, []);
 
-  const maxSales = Math.max(...salesData.map(d => d.sales));
+  const loadReportes = async () => {
+    try {
+      const [ordenesRes, statsRes] = await Promise.all([
+        axios.get('http://localhost:8081/material-op/reporte-ordenes'),
+        axios.get('http://localhost:8081/material-op/estadisticas-globales')
+      ]);
+      
+      setOrdenesReporte(ordenesRes.data);
+      setEstadisticasGlobales(statsRes.data);
+    } catch (error) {
+      console.error('Error cargando reportes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="reports-container">
+        <div className="loading-message">
+          <i className="fas fa-spinner fa-spin"></i> Cargando reportes...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="reports-container">
       <div className="reports-header">
-        <h2>Reportes y Análisis</h2>
-        <p>Dashboard de métricas y estadísticas del negocio</p>
+        <h2>📊 Reportes de Desperdicios</h2>
+        <div className="global-stats">
+          <div className="stat-item">
+            <i className="fas fa-apple-alt"></i>
+            <span>Fruta más desperdiciada: <strong>{estadisticasGlobales.skuMasDesperdiciado || 'N/A'}</strong></span>
+            <span className="stat-value">({estadisticasGlobales.gramosMasDesperdiciado || 0}g)</span>
+          </div>
+          <div className="stat-item">
+            <i className="fas fa-exclamation-triangle"></i>
+            <span>Motivo más frecuente: <strong>{estadisticasGlobales.motivoMasFrecuente?.replace('_', ' ') || 'N/A'}</strong></span>
+            <span className="stat-value">({estadisticasGlobales.vecesMotivo || 0} veces)</span>
+          </div>
+        </div>
       </div>
 
-      <div className="reports-grid">
-        <div className="chart-card card">
-          <h3><i className="fas fa-chart-line"></i> Ventas Mensuales</h3>
-          <div className="bar-chart">
-            {salesData.map((data, index) => (
-              <div key={index} className="bar-container">
-                <div 
-                  className="bar" 
-                  style={{ height: `${(data.sales / maxSales) * 100}%` }}
-                >
-                  <span className="bar-value">{data.sales}k</span>
-                </div>
-                <span className="bar-label">{data.month}</span>
-              </div>
-            ))}
+      <div className="orders-table-section">
+        <h3>🗂️ Órdenes de Producción - Desperdicios</h3>
+        {ordenesReporte.length === 0 ? (
+          <div className="empty-message card">
+            <i className="fas fa-info-circle"></i>
+            <p>No hay órdenes activas o terminadas con desperdicios registrados</p>
           </div>
-        </div>
-
-        <div className="metric-card card">
-          <h3><i className="fas fa-trash-alt"></i> Desperdicio de Materia Prima</h3>
-          <div className="circular-progress">
-            <div 
-              className="progress-circle waste"
-              style={{ '--progress': wastePercentage }}
-            >
-              <span className="progress-value">{wastePercentage.toFixed(1)}%</span>
-            </div>
+        ) : (
+          <div className="table-container card">
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th>Orden #</th>
+                  <th>Producto</th>
+                  <th>Estado</th>
+                  <th>Desperdicio Total</th>
+                  <th>Nivel</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ordenesReporte.map((orden, index) => {
+                  const desperdicioKg = (orden.totalDesperdiciado / 1000).toFixed(2);
+                  const nivel = orden.totalDesperdiciado > 5000 ? 'Alto' : 
+                               orden.totalDesperdiciado > 2000 ? 'Medio' : 'Bajo';
+                  const nivelClass = nivel === 'Alto' ? 'nivel-alto' : 
+                                   nivel === 'Medio' ? 'nivel-medio' : 'nivel-bajo';
+                  
+                  return (
+                    <tr key={index}>
+                      <td><strong>#{orden.idOp}</strong></td>
+                      <td>{orden.sku}</td>
+                      <td>
+                        <span className={`status-badge status-${orden.estado.toLowerCase()}`}>
+                          {orden.estado}
+                        </span>
+                      </td>
+                      <td>{desperdicioKg} kg</td>
+                      <td>
+                        <span className={`nivel-badge ${nivelClass}`}>
+                          {nivel}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <p className="metric-description">
-            {wastePercentage < 10 ? 'Excelente control' : 
-             wastePercentage < 15 ? 'Dentro del rango' : 'Requiere atención'}
-          </p>
-        </div>
-
-        <div className="metric-card card">
-          <h3><i className="fas fa-industry"></i> Nivel de Producción</h3>
-          <div className="circular-progress">
-            <div 
-              className="progress-circle production"
-              style={{ '--progress': productionLevel }}
-            >
-              <span className="progress-value">{productionLevel.toFixed(0)}%</span>
-            </div>
-          </div>
-          <p className="metric-description">
-            {productionLevel > 90 ? 'Producción óptima' : 
-             productionLevel > 80 ? 'Producción normal' : 'Por debajo del objetivo'}
-          </p>
-        </div>
-
-        <div className="summary-card card">
-          <h3><i className="fas fa-clipboard-list"></i> Resumen Ejecutivo</h3>
-          <div className="summary-stats">
-            <div className="summary-item">
-              <i className="fas fa-arrow-up text-success"></i>
-              <span>Ventas: +15% vs mes anterior</span>
-            </div>
-            <div className="summary-item">
-              <i className="fas fa-users text-info"></i>
-              <span>Clientes activos: 1,247</span>
-            </div>
-            <div className="summary-item">
-              <i className="fas fa-box text-warning"></i>
-              <span>Productos en stock: 89%</span>
-            </div>
-            <div className="summary-item">
-              <i className="fas fa-truck text-primary"></i>
-              <span>Pedidos pendientes: 23</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="trends-card card">
-          <h3><i className="fas fa-chart-area"></i> Tendencias de Productos</h3>
-          <div className="trend-list">
-            <div className="trend-item">
-              <span className="product-name">Frutillas congeladas</span>
-              <div className="trend-bar">
-                <div className="trend-fill" style={{ width: '85%' }}></div>
-              </div>
-              <span className="trend-value">85%</span>
-            </div>
-            <div className="trend-item">
-              <span className="product-name">Mix de berries</span>
-              <div className="trend-bar">
-                <div className="trend-fill" style={{ width: '72%' }}></div>
-              </div>
-              <span className="trend-value">72%</span>
-            </div>
-            <div className="trend-item">
-              <span className="product-name">Espinacas congeladas</span>
-              <div className="trend-bar">
-                <div className="trend-fill" style={{ width: '68%' }}></div>
-              </div>
-              <span className="trend-value">68%</span>
-            </div>
-            <div className="trend-item">
-              <span className="product-name">Zanahorias baby</span>
-              <div className="trend-bar">
-                <div className="trend-fill" style={{ width: '54%' }}></div>
-              </div>
-              <span className="trend-value">54%</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
+  );
+
+  // Estilos adicionales para la tabla
+  const styles = `
+    .global-stats {
+      display: flex;
+      gap: 30px;
+      margin-top: 15px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stat-item i {
+      color: #007bff;
+      font-size: 18px;
+    }
+    .stat-value {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .orders-table-section {
+      margin-top: 30px;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .orders-table th,
+    .orders-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .orders-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .nivel-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .nivel-alto { background: #dc3545; color: white; }
+    .nivel-medio { background: #ffc107; color: black; }
+    .nivel-bajo { background: #28a745; color: white; }
+  `;
+  
+  return (
+    <>
+      <style>{styles}</style>
+      {/* Contenido del componente aquí */}
+    </>
   );
 };
 
