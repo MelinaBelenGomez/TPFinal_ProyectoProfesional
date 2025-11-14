@@ -72,26 +72,23 @@ export const dashboardService = {
   // Obtener estadísticas globales
   async getGlobalStats() {
     try {
-      // Intentar obtener estadísticas del endpoint de material-op
-      const statsResponse = await fetch(`${API_BASE_URL}/material-op/estadisticas-globales`);
-      if (statsResponse.ok) {
-        return await statsResponse.json();
-      }
-      
-      // Si no funciona, calcular desde órdenes
       const ordersResponse = await fetch(`${API_BASE_URL}/ordenes-produccion/consultar/todas`);
-      if (ordersResponse.ok) {
-        const orders = await ordersResponse.json();
-        return {
-          totalOrdenes: orders.length,
-          ordenesActivas: orders.filter(o => o.estado === 'activa').length,
-          ordenesPlanificadas: orders.filter(o => o.estado === 'planificada').length,
-          ordenesConsumidas: orders.filter(o => o.estado === 'consumida').length
-        };
-      }
-      throw new Error('Error al obtener órdenes');
+      if (!ordersResponse.ok) throw new Error('Error al obtener órdenes');
+      
+      const orders = await ordersResponse.json();
+      console.log('Órdenes obtenidas:', orders); // Debug
+      
+      const stats = {
+        totalOrdenes: orders.length,
+        ordenesActivas: orders.filter(o => o.estado === 'activa').length,
+        ordenesPlanificadas: orders.filter(o => o.estado === 'planificada').length,
+        ordenesConsumidas: orders.filter(o => o.estado === 'consumida').length
+      };
+      
+      console.log('Estadísticas calculadas:', stats); // Debug
+      return stats;
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error obteniendo estadísticas:', error);
       return {
         totalOrdenes: 0,
         ordenesActivas: 0,

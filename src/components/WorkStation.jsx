@@ -440,12 +440,17 @@ const WorkStation = ({ user }) => {
                     required
                   >
                     <option value="">Seleccionar motivo...</option>
-                    <option value="producto_defectuoso">Producto defectuoso</option>
-                    <option value="contaminacion">Contaminación</option>
-                    <option value="error_proceso">Error en el proceso</option>
-                    <option value="caducidad">Producto caducado</option>
-                    <option value="accidente">Accidente/Derrame</option>
-                    <option value="otro">Otro</option>
+                    <option value="materia_prima_defectuosa">Materia prima defectuosa/dañada</option>
+                    <option value="sobremadurez">Sobremadurez/Deterioro natural</option>
+                    <option value="golpes_magulladuras">Golpes y magulladuras</option>
+                    <option value="contaminacion_fisica">Contaminación física (tierra, piedras)</option>
+                    <option value="fuera_calibre">Fuera de calibre/tamaño</option>
+                    <option value="error_pelado_corte">Error en pelado/corte</option>
+                    <option value="exceso_recorte">Exceso de recorte/merma</option>
+                    <option value="contaminacion_biologica">Contaminación biológica</option>
+                    <option value="falla_equipo">Falla de equipo/maquinaria</option>
+                    <option value="derrame_accidente">Derrame/Accidente operativo</option>
+                    <option value="otro">Otro motivo</option>
                   </select>
                 </div>
 
