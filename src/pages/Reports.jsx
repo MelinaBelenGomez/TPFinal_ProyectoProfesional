@@ -220,6 +220,16 @@ const Reports = () => {
           height: 100%;
           transition: width 0.3s ease;
         }
+        .pie-chart-section {
+          margin: 30px 0;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+        }
+        .pie-chart-section h4 {
+          text-align: center;
+          margin-bottom: 20px;
+        }
       `}</style>
     <div className="reports-container">
       <div className="reports-header">
@@ -322,6 +332,58 @@ const Reports = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Gráfico de Torta */}
+                  {(() => {
+                    const totalReservado = orderDetails.materiales?.reduce((sum, m) => sum + (m.cantidadReservada || 0), 0) || 0;
+                    const totalDesperdiciado = orderDetails.materiales?.reduce((sum, m) => sum + (m.cantidadDesperdiciada || 0), 0) || 0;
+                    const totalUtilizado = totalReservado - totalDesperdiciado;
+                    const porcentajeDesperdicio = totalReservado > 0 ? ((totalDesperdiciado / totalReservado) * 100).toFixed(1) : 0;
+                    
+                    if (totalReservado === 0) return null;
+                    
+                    return (
+                      <div className="pie-chart-section">
+                        <h4>Eficiencia de Materiales</h4>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '30px', justifyContent: 'center' }}>
+                          <div className="pie-chart" style={{
+                            width: '150px',
+                            height: '150px',
+                            borderRadius: '50%',
+                            background: `conic-gradient(#28a745 0deg ${(totalUtilizado/totalReservado)*360}deg, #dc3545 ${(totalUtilizado/totalReservado)*360}deg 360deg)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            position: 'relative'
+                          }}>
+                            <div style={{
+                              width: '80px',
+                              height: '80px',
+                              borderRadius: '50%',
+                              background: 'white',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#dc3545' }}>{porcentajeDesperdicio}%</div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>Desperdicio</div>
+                            </div>
+                          </div>
+                          <div className="pie-legend">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                              <div style={{ width: '16px', height: '16px', backgroundColor: '#28a745', borderRadius: '3px' }}></div>
+                              <span>Material Utilizado: {(totalUtilizado/1000).toFixed(2)} kg</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ width: '16px', height: '16px', backgroundColor: '#dc3545', borderRadius: '3px' }}></div>
+                              <span>Material Desperdiciado: {(totalDesperdiciado/1000).toFixed(2)} kg</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="materials-section">
                     <h4>Desperdicio por Material</h4>

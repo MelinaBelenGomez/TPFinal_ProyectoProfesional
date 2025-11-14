@@ -18,13 +18,7 @@ const AppRoutes = ({ user }) => {
   if (user?.rol === 'ADMIN') {
     return (
       <Routes>
-        <Route path="/" element={
-          <>
-            <Dashboard />
-            <ProductsTable />
-            <ProductForm />
-          </>
-        } />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/production" element={<Production user={user} />} />
         <Route path="/products" element={<Products />} />
@@ -39,12 +33,7 @@ const AppRoutes = ({ user }) => {
   } else if (user?.rol === 'JEFE_PRODUCCION') {
     return (
       <Routes>
-        <Route path="/" element={
-          <>
-            <Dashboard />
-            <ProductsTable />
-          </>
-        } />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/production-orders" element={<Production user={user} />} />
         <Route path="/process-monitor" element={<Reports />} />
         <Route path="/staff-assignment" element={<Settings />} />

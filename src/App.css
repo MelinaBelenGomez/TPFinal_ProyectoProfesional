@@ -37,6 +37,278 @@
   padding: 2em;
 }
 
+/* Dashboard Styles */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+@media (min-width: 1200px) {
+  .dashboard {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .dashboard .card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.dashboard .card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1.25rem;
+  border: 1px solid #e0e0e0;
+}
+
+.dashboard .card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard .card p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.stat {
+  text-align: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.orders-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.order-item {
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: #f8f9fa;
+}
+
+.order-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.order-details {
+  font-size: 12px;
+  color: #666;
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-activa {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-planificada {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-consumida {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-cancelada {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.stations-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+@media (max-width: 768px) {
+  .stations-grid {
+    flex-direction: column;
+  }
+}
+
+.station-item {
+  padding: 0.75rem;
+  border-radius: 6px;
+  text-align: center;
+  border: 2px solid;
+  flex: 1;
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .station-item {
+    flex: none;
+    width: 100%;
+  }
+}
+
+.station-item.occupied {
+  border-color: #dc3545;
+  background: #f8d7da;
+}
+
+.station-item.free {
+  border-color: #28a745;
+  background: #d4edda;
+}
+
+.station-name {
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.station-status {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.dashboard ul {
+  text-align: left;
+  padding-left: 1rem;
+}
+
+.dashboard li {
+  margin-bottom: 0.5rem;
+  font-size: 14px;
+}
+
+.dashboard button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.dashboard button:hover {
+  background: #0056b3;
+}
+
+/* Dashboard Alerts */
+.dashboard-alerts {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border-left: 4px solid;
+}
+
+.alert-warning {
+  background: #fff3cd;
+  border-left-color: #ffc107;
+  color: #856404;
+}
+
+.alert-info {
+  background: #d1ecf1;
+  border-left-color: #17a2b8;
+  color: #0c5460;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alert-text strong {
+  font-size: 14px;
+}
+
+.alert-text span {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.alert-action {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alert-action:hover {
+  background: currentColor;
+  color: white;
+}
+
 .read-the-docs {
   color: #888;
 }
