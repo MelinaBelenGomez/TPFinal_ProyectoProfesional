@@ -211,15 +211,20 @@ const Production = ({ user }) => {
     const cantidadProducir = productionConfig.cantidad_base_orden;
     
     // Obtener peso real del producto desde BOM
-    let pesoUnitario = 500; // Por defecto 500g
-    try {
-      const bomResponse = await axios.get(`http://localhost:8081/bom/${order.sku}`);
-      pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.cantPorUnidad || 0), 0);
-      if (pesoUnitario === 0) {
-        pesoUnitario = 500; // Fallback si BOM está vacío
+    let pesoUnitario = productWeights[order.sku] ? productWeights[order.sku] * 1000 : 500; // Convertir kg a gramos
+    
+    // Si no está en cache, obtenerlo del BOM
+    if (!productWeights[order.sku]) {
+      try {
+        const bomResponse = await axios.get(`http://localhost:8081/bom/${order.sku}`);
+        pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.canPorUnidad || 0), 0);
+        if (pesoUnitario === 0) {
+          pesoUnitario = 500; // Fallback si BOM está vacío
+        }
+      } catch (error) {
+        console.warn('No se pudo obtener BOM, usando peso por defecto');
+        pesoUnitario = 500;
       }
-    } catch (error) {
-      console.warn('No se pudo obtener BOM, usando peso por defecto');
     }
     
     // Calcular cuántos lotes se crearán

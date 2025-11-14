@@ -41,7 +41,7 @@ const WorkStation = ({ user }) => {
         try {
           const ordenResponse = await axios.get(`http://localhost:8081/ordenes-produccion/consultar/${idOp}`);
           const bomResponse = await axios.get(`http://localhost:8081/bom/${ordenResponse.data.sku}`);
-          const pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.cantPorUnidad || 0), 0);
+          const pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.canPorUnidad || 0), 0);
           return { 
             idOp, 
             cantidad: ordenResponse.data.cantidad,
@@ -285,7 +285,7 @@ const WorkStation = ({ user }) => {
                   <div className="order-info">
                     <div className="info-item">
                       <i className="fas fa-boxes"></i>
-                      <span>Unidades: {lote.unidadesLote}</span>
+                      <span>Productos finales: {lote.unidadesLote}</span>
                     </div>
                     <div className="info-item">
                       <i className="fas fa-weight"></i>

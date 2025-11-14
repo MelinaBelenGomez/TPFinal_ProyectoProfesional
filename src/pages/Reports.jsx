@@ -19,15 +19,15 @@ const Reports = () => {
     try {
       const [materialesRes, resumenRes] = await Promise.all([
         axios.get(`http://localhost:8081/material-op/materiales-orden/${idOp}`),
-        axios.get(`http://localhost:8081/material-op/resumen-orden/${idOp}`)
+        axios.get(`http://localhost:8081/material-op/resumen-orden-registro/${idOp}`)
       ]);
       
       console.log('Materiales recibidos:', materialesRes.data); // Debug
-      console.log('Resumen recibido:', resumenRes.data); // Debug
+      console.log('Resumen desde registro_desperdicio:', resumenRes.data); // Debug
       
       setOrderDetails({
         materiales: materialesRes.data,
-        resumen: resumenRes.data
+        resumen: [resumenRes.data] // Convertir a array para mantener compatibilidad
       });
     } catch (error) {
       console.error('Error cargando detalles:', error);
@@ -47,13 +47,20 @@ const Reports = () => {
     try {
       const [ordenesRes, statsRes] = await Promise.all([
         axios.get('http://localhost:8081/material-op/reporte-ordenes'),
-        axios.get('http://localhost:8081/material-op/estadisticas-globales')
+        axios.get('http://localhost:8081/material-op/estadisticas-desperdicio')
       ]);
       
       console.log('Datos de reportes:', ordenesRes.data); // Debug
-      console.log('Estadísticas globales:', statsRes.data); // Debug
+      console.log('Estadísticas de desperdicio:', statsRes.data); // Debug
       setOrdenesReporte(ordenesRes.data);
-      setEstadisticasGlobales(statsRes.data);
+      
+      // Procesar estadísticas desde registro_desperdicio
+      if (statsRes.data && statsRes.data.length > 0) {
+        setEstadisticasGlobales({
+          motivoMasFrecuente: statsRes.data[0].motivo,
+          vecesMotivo: statsRes.data[0].cantidad
+        });
+      }
     } catch (error) {
       console.error('Error cargando reportes:', error);
     } finally {
