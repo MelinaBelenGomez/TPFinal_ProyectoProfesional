@@ -49,7 +49,7 @@ const RawMaterials = () => {
   };
 
   const loadAvailableProducts = async () => {
-    const response = await ProductionServiceAxios.getProductsAvailableForStock();
+    const response = await ProductionServiceAxios.getProductosMateriaPrima();
     if (response.success) {
       setAvailableProducts(response.data);
     }
@@ -289,7 +289,7 @@ const RawMaterials = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Stock Inicial:</label>
+                  <label>Stock Inicial (gramos):</label>
                   <input
                     type="number"
                     min="0"
@@ -297,9 +297,14 @@ const RawMaterials = () => {
                     onChange={(e) => setNewMaterial({...newMaterial, stock_inicial: e.target.value})}
                     required
                   />
+                  {newMaterial.stock_inicial && (
+                    <small style={{color: '#666', fontSize: '12px', display: 'block', marginTop: '4px'}}>
+                      ≈ {(parseFloat(newMaterial.stock_inicial) / 1000).toFixed(2)} kg
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
-                  <label>Cantidad Mínima:</label>
+                  <label>Cantidad Mínima (gramos):</label>
                   <input
                     type="number"
                     min="0"
@@ -307,6 +312,11 @@ const RawMaterials = () => {
                     onChange={(e) => setNewMaterial({...newMaterial, cantidad_minima: e.target.value})}
                     placeholder="0"
                   />
+                  {newMaterial.cantidad_minima && (
+                    <small style={{color: '#666', fontSize: '12px', display: 'block', marginTop: '4px'}}>
+                      ≈ {(parseFloat(newMaterial.cantidad_minima) / 1000).toFixed(2)} kg
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Unidad:</label>

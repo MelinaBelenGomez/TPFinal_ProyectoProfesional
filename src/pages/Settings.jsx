@@ -145,13 +145,27 @@ const Settings = () => {
   };
   
   const calcularPesoDesdeProducto = async (sku) => {
+    if (!sku || sku.trim() === '') {
+      console.log('SKU vacío, usando peso por defecto');
+      setPesoUnitario(500);
+      return;
+    }
+    
     try {
+      console.log('Calculando peso para SKU:', sku);
       // Obtener BOM del producto seleccionado
       const response = await axios.get(`http://localhost:8081/bom/${sku}`);
-      const pesoTotal = response.data.reduce((total, item) => 
-        total + (item.cantPorUnidad || 0), 0
-      );
-      setPesoUnitario(pesoTotal > 0 ? pesoTotal : 500);
+      console.log('BOM obtenido:', response.data);
+      
+      const pesoTotal = response.data.reduce((total, item) => {
+        console.log(`Material: ${item.skuMaterial}, Cantidad: ${item.canPorUnidad}`);
+        return total + (item.canPorUnidad || 0);
+      }, 0);
+      
+      console.log('Peso total calculado:', pesoTotal);
+      const pesoFinal = pesoTotal > 0 ? pesoTotal : 500;
+      console.log('Peso final asignado:', pesoFinal);
+      setPesoUnitario(pesoFinal);
     } catch (error) {
       console.error('Error calculando peso desde BOM:', error);
       // Usar peso por defecto
@@ -762,10 +776,11 @@ const Settings = () => {
                   <label>Producto de Referencia (para cálculo de peso):</label>
                   <select
                     value={skuSeleccionado}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const newSku = e.target.value;
+                      console.log('Producto seleccionado:', newSku);
                       setSkuSeleccionado(newSku);
-                      calcularPesoDesdeProducto(newSku);
+                      await calcularPesoDesdeProducto(newSku);
                     }}
                   >
                     <option value="">Seleccionar producto...</option>

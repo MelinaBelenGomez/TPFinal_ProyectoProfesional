@@ -125,6 +125,22 @@ class ProductionServiceAxios {
     }
   }
 
+  // CONECTADO AL BACKEND: Obtener productos de materia prima (no MIX)
+  static async getProductosMateriaPrima() {
+    try {
+      const response = await axios.get(`${this.baseURL}/productos/materia-prima`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al obtener productos de materia prima'
+      };
+    }
+  }
+
   // SIMULADO: Crear orden de producción
   static async createProductionOrder(orderData) {
     await this.delay();
