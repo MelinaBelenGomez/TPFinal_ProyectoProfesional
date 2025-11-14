@@ -1245,7 +1245,7 @@ button:hover {
   padding: 10px 0;
 }
 
-/* 🔹 Estilo base compartido para ambos botones */
+/* Estilo base compartido para ambos botones */
 .order-actions button {
   min-width: 220px;             /* mismos anchos */
   padding: 10px 16px;

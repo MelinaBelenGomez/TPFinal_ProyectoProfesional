@@ -10,7 +10,7 @@ class ProductionServiceAxios {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener producto por SKU
+  // CONECTADO AL BACKEND: Obtener producto por SKU
   static async getProductBySku(sku) {
     try {
       // Axios básico: axios.get(url)
@@ -36,7 +36,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Crear producto
+  // CONECTADO AL BACKEND: Crear producto
   static async createProduct(productData) {
     try {
       // Axios básico: axios.post(url, data)
@@ -60,7 +60,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Eliminar producto
+  // CONECTADO AL BACKEND: Eliminar producto
   static async deleteProduct(sku) {
     try {
       // Axios básico: axios.delete(url)
@@ -78,7 +78,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener todos los productos
+  // CONECTADO AL BACKEND: Obtener todos los productos
   static async getAvailableProducts() {
     try {
       const response = await axios.get(`${this.baseURL}/productos/todos`);
@@ -94,7 +94,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener productos disponibles para asignar a stock
+  // CONECTADO AL BACKEND: Obtener productos disponibles para asignar a stock
   static async getProductsAvailableForStock() {
     try {
       const response = await axios.get(`${this.baseURL}/productos/disponibles-stock`);
@@ -110,7 +110,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 📦 SIMULADO: Crear orden de producción
+  // SIMULADO: Crear orden de producción
   static async createProductionOrder(orderData) {
     await this.delay();
     
@@ -122,7 +122,7 @@ class ProductionServiceAxios {
         usuario_responsable: orderData.responsable
       };
 
-      console.log('📤 Enviando al backend (simulado):', payload);
+      console.log('Enviando al backend (simulado):', payload);
 
       const response = {
         success: true,
@@ -149,7 +149,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener categorías disponibles
+  // CONECTADO AL BACKEND: Obtener categorías disponibles
   static async getCategories() {
     try {
       const response = await axios.get(`${this.baseURL}/categorias`);
@@ -160,7 +160,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Crear categoría
+  // CONECTADO AL BACKEND: Crear categoría
   static async createCategory(categoryData) {
     try {
       await axios.post(`${this.baseURL}/categorias`, {
@@ -179,7 +179,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Eliminar categoría
+  // CONECTADO AL BACKEND: Eliminar categoría
   static async deleteCategory(nombre) {
     try {
       await axios.delete(`${this.baseURL}/categorias/${nombre}`);
@@ -195,7 +195,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener BOM de un producto
+  // CONECTADO AL BACKEND: Obtener BOM de un producto
   static async getBom(sku) {
     try {
       const response = await axios.get(`${this.baseURL}/bom/${sku}`);
@@ -211,7 +211,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Crear entrada BOM
+  // CONECTADO AL BACKEND: Crear entrada BOM
   static async createBomEntry(bomData) {
     try {
       await axios.post(`${this.baseURL}/bom`, {
@@ -231,7 +231,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Eliminar BOM completo
+  // CONECTADO AL BACKEND: Eliminar BOM completo
   static async deleteBom(sku) {
     try {
       await axios.delete(`${this.baseURL}/bom/${sku}`);
@@ -247,7 +247,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener centros de producción
+  // CONECTADO AL BACKEND: Obtener centros de producción
   static async getCentros() {
     try {
       const response = await axios.get(`${this.baseURL}/centros-produccion`);
@@ -263,7 +263,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Crear centro de producción
+  // CONECTADO AL BACKEND: Crear centro de producción
   static async createCentro(centroData) {
     try {
       await axios.post(`${this.baseURL}/centros-produccion`, {
@@ -282,7 +282,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener almacenes
+  // CONECTADO AL BACKEND: Obtener almacenes
   static async getAlmacenes() {
     try {
       const response = await axios.get(`${this.baseURL}/almacenes`);
@@ -298,7 +298,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Crear almacén
+  // CONECTADO AL BACKEND: Crear almacén
   static async createAlmacen(almacenData) {
     try {
       await axios.post(`${this.baseURL}/almacenes`, {
@@ -319,7 +319,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Crear materia prima completa
+  // CONECTADO AL BACKEND: Crear materia prima completa
   static async createRawMaterial(materialData) {
     try {
       // 1. Crear producto
@@ -371,7 +371,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Habilitar producto en almacén
+  // CONECTADO AL BACKEND: Habilitar producto en almacén
   static async habilitarProducto(sku, idAlmacen) {
     try {
       await axios.put(`${this.baseURL}/stock/habilitar-producto`, {
@@ -390,7 +390,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Incrementar stock
+  // CONECTADO AL BACKEND: Incrementar stock
   static async incrementarStock(sku, idAlmacen, cantidad) {
     try {
       await axios.put(`${this.baseURL}/stock/ingresar`, {
@@ -410,7 +410,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Consultar stock de producto en almacén
+  // CONECTADO AL BACKEND: Consultar stock de producto en almacén
   static async consultarStock(sku, idAlmacen) {
     try {
       const response = await axios.get(`${this.baseURL}/stock/consultar-producto-almacen`, {
@@ -428,7 +428,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener todos los stocks
+  // CONECTADO AL BACKEND: Obtener todos los stocks
   static async getAllStocks() {
     try {
       const response = await axios.get(`${this.baseURL}/stock/todos`);
@@ -444,7 +444,7 @@ class ProductionServiceAxios {
     }
   }
 
-  // 🔗 CONECTADO AL BACKEND: Obtener materias primas desde stock_almacen
+  // CONECTADO AL BACKEND: Obtener materias primas desde stock_almacen
   static async getRawMaterialsWithStock() {
     try {
       const [stocksResponse, productsResponse, almacenesResponse] = await Promise.all([

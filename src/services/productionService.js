@@ -18,7 +18,7 @@ class ProductionService {
         usuario_responsable: orderData.responsable    // Usuario que crea la orden
       };
 
-      console.log('📤 Enviando al backend:', payload);
+      console.log('Enviando al backend:', payload);
 
       // Simulación de respuesta del backend
       const response = {
@@ -36,7 +36,7 @@ class ProductionService {
         message: 'Orden de producción creada exitosamente'
       };
 
-      console.log('📥 Respuesta del backend:', response);
+      console.log('Respuesta del backend:', response);
       return response;
 
     } catch (error) {

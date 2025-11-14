@@ -77,13 +77,13 @@ const Infrastructure = () => {
   return (
     <div className="infrastructure-container">
       <div className="header">
-        <h2>🏭 Infraestructura</h2>
+        <h2>Infraestructura</h2>
         <p>Gestión de centros de producción y almacenes</p>
       </div>
 
       {/* Sección Centros de Producción */}
       <div className="card">
-        <h3>🏢 Centros de Producción</h3>
+        <h3>Centros de Producción</h3>
         
         <form onSubmit={handleCreateCentro} style={{ marginBottom: '20px' }}>
           <div className="form-group">
@@ -145,7 +145,7 @@ const Infrastructure = () => {
               </table>
             ) : (
               <div style={{ padding: '10px', background: '#f0f0f0', borderRadius: '5px' }}>
-                <p>📊 <strong>No hay centros creados</strong></p>
+                <p> <strong>No hay centros creados</strong></p>
                 <p>Crea el primer centro de producción usando el formulario de arriba.</p>
               </div>
             )}
@@ -155,7 +155,7 @@ const Infrastructure = () => {
 
       {/* Sección Almacenes */}
       <div className="card">
-        <h3>🏪 Almacenes</h3>
+        <h3>Almacenes</h3>
         
         <form onSubmit={handleCreateAlmacen} style={{ marginBottom: '20px' }}>
           <div className="form-group">

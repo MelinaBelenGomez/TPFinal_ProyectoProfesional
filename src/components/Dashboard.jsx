@@ -94,7 +94,7 @@ const Dashboard = () => {
             ))}
           </ul>
         ) : (
-          <p style={{color: '#28a745'}}>✓ Todos los productos tienen stock suficiente</p>
+          <p style={{color: '#28a745'}}>Todos los productos tienen stock suficiente</p>
         )}
         <button style={{marginTop: '1rem'}} onClick={() => navigate('/raw-materials')}>
           Ver Inventario Completo
