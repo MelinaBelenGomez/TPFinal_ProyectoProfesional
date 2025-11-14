@@ -8,9 +8,9 @@ const WorkStation = ({ user }) => {
   const [showWasteForm, setShowWasteForm] = useState(null);
   const [wasteData, setWasteData] = useState({
     motivo: '',
-    observaciones: '',
     materiales: [] // Array de {sku, nombre, desperdicio_gramos}
   });
+  const [wasteStats, setWasteStats] = useState([]);
   const [bomMateriales, setBomMateriales] = useState([]);
   const [loadingBom, setLoadingBom] = useState(false);
   const [productionConfig, setProductionConfig] = useState(null);
@@ -135,15 +135,27 @@ const WorkStation = ({ user }) => {
       setBomMateriales(materialesConDesperdicio);
       setWasteData({
         motivo: '',
-        observaciones: '',
         materiales: materialesConDesperdicio
       });
+      
+      // Cargar estadísticas de desperdicios
+      loadWasteStats();
       setShowWasteForm(lote);
     } catch (error) {
       console.error('Error cargando BOM:', error);
       alert('❌ Error al cargar los materiales del producto');
     } finally {
       setLoadingBom(false);
+    }
+  };
+
+  const loadWasteStats = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/material-op/estadisticas-desperdicio');
+      setWasteStats(response.data.slice(0, 3)); // Top 3 motivos
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+      setWasteStats([]);
     }
   };
 
@@ -335,25 +347,27 @@ const WorkStation = ({ user }) => {
                 // Registrar desperdicio para cada material
                 for (const material of wasteData.materiales) {
                   if (material.desperdicio_gramos > 0) {
-                    await axios.put('http://localhost:8081/material-op/registrar-desperdicio', {
+                    const payload = {
                       idOp: showWasteForm.idOp,
                       sku: material.sku,
                       cantidadDesperdiciada: material.desperdicio_gramos,
                       motivo: wasteData.motivo,
-                      observaciones: wasteData.observaciones,
                       estacion: user.estacion_asignada,
-                      operario: user.nombre
-                    });
+                      operario: user.nombre || user.username
+                    };
+                    console.log('Enviando desperdicio:', payload);
+                    await axios.put('http://localhost:8081/material-op/registrar-desperdicio', payload);
                   }
                 }
                 
                 alert("✅ Desperdicio registrado exitosamente");
                 setShowWasteForm(null);
-                setWasteData({ motivo: '', observaciones: '', materiales: [] });
+                setWasteData({ motivo: '', materiales: [] });
                 setBomMateriales([]);
               } catch (error) {
                 console.error('Error registrando desperdicio:', error);
-                alert('❌ Error al registrar desperdicio');
+                const errorMsg = error.response?.data || error.message || 'Error desconocido';
+                alert('❌ Error al registrar desperdicio: ' + errorMsg);
               }
             }}>
               <div className="form-grid">
@@ -431,15 +445,20 @@ const WorkStation = ({ user }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Observaciones:</label>
-                  <textarea
-                    value={wasteData.observaciones}
-                    onChange={(e) => setWasteData({...wasteData, observaciones: e.target.value})}
-                    rows="3"
-                    placeholder="Describe los detalles del desperdicio..."
-                  ></textarea>
-                </div>
+                {/* Estadísticas de desperdicios más frecuentes */}
+                {wasteStats.length > 0 && (
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>📊 Motivos más frecuentes de desperdicio:</label>
+                    <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '4px', fontSize: '14px' }}>
+                      {wasteStats.map((stat, index) => (
+                        <div key={index} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                          <span>🔸 {stat.motivo.replace('_', ' ')}</span>
+                          <span><strong>{stat.cantidad} registros</strong></span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-actions">
