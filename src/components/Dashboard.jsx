@@ -53,10 +53,10 @@ const Dashboard = () => {
   }
 
   return (
-    <>
+    <div className="dashboard-container">
       <DashboardAlerts />
       <div className="dashboard">
-        <div className="card">
+        <div className="card compact">
         <h3><i className="fas fa-chart-line"></i> Estadísticas de Producción</h3>
         <p>Resumen general del sistema</p>
         <div className="stats">
@@ -133,7 +133,7 @@ const Dashboard = () => {
         </button>
       </div>
       
-      <div className="card">
+      <div className="card stations-card">
         <h3><i className="fas fa-industry"></i> Estaciones de Trabajo</h3>
         <p>Estado actual de las líneas de producción</p>
         <div className="stations-grid">
@@ -161,7 +161,7 @@ const Dashboard = () => {
         </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

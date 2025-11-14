@@ -51,23 +51,26 @@ const DashboardAlerts = () => {
   if (alerts.length === 0) return null;
 
   return (
-    <div className="dashboard-alerts">
-      {alerts.map((alert, index) => (
-        <div key={index} className={`alert alert-${alert.type}`}>
-          <div className="alert-content">
-            <i className={alert.icon}></i>
-            <div className="alert-text">
-              <strong>{alert.title}</strong>
-              <span>{alert.message}</span>
+    <div className="card alerts-card">
+      <h3><i className="fas fa-bell"></i> Alertas del Sistema</h3>
+      <div className="alerts-list">
+        {alerts.map((alert, index) => (
+          <div key={index} className={`alert alert-${alert.type}`}>
+            <div className="alert-content">
+              <i className={alert.icon}></i>
+              <div className="alert-text">
+                <strong>{alert.title}</strong>
+                <span>{alert.message}</span>
+              </div>
             </div>
+            {alert.action && (
+              <button className="alert-action" onClick={alert.action}>
+                Ver
+              </button>
+            )}
           </div>
-          {alert.action && (
-            <button className="alert-action" onClick={alert.action}>
-              Ver
-            </button>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
