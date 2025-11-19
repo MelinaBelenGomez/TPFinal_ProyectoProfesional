@@ -4,7 +4,7 @@ import axios from 'axios';
 class ProductionServiceAxios {
   
   // URL del backend
-  static baseURL = 'http://localhost:8081';
+  static baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
   
   static delay(ms = 500) {
     return new Promise(resolve => setTimeout(resolve, ms));

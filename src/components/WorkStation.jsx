@@ -29,7 +29,7 @@ const WorkStation = ({ user }) => {
     try {
       // Mapear estación del usuario a estación en BD
       const estacionBD = user.estacion_asignada === 'PELADO_TROZADO' ? 'PELADO' : user.estacion_asignada;
-      const response = await axios.get(`http://localhost:8081/lotes/estacion/${estacionBD}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/lotes/estacion/${estacionBD}`);
       // Filtrar solo lotes activos (no cancelados)
       const lotesData = response.data.filter(lote => 
         lote.estado !== 'CANCELADO' && lote.estado !== 'cancelado'
@@ -39,8 +39,8 @@ const WorkStation = ({ user }) => {
       const ordenesUnicas = [...new Set(lotesData.map(lote => lote.idOp))];
       const ordenPromises = ordenesUnicas.map(async (idOp) => {
         try {
-          const ordenResponse = await axios.get(`http://localhost:8081/ordenes-produccion/consultar/${idOp}`);
-          const bomResponse = await axios.get(`http://localhost:8081/bom/${ordenResponse.data.sku}`);
+          const ordenResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/ordenes-produccion/consultar/${idOp}`);
+          const bomResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/bom/${ordenResponse.data.sku}`);
           const pesoUnitario = bomResponse.data.reduce((total, item) => total + (item.canPorUnidad || 0), 0);
           return { 
             idOp, 
@@ -70,7 +70,7 @@ const WorkStation = ({ user }) => {
 
   const loadProductionConfig = async () => {
     try {
-      const response = await axios.get('http://localhost:8081/config-produccion');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/config-produccion`);
       setProductionConfig({
         cantidad_base_orden: response.data.cantidadBaseOrden,
         numero_lotes_fijo: response.data.numeroLotesFijo
@@ -119,11 +119,11 @@ const WorkStation = ({ user }) => {
     setLoadingBom(true);
     try {
       // Obtener la orden de producción para conseguir el SKU
-      const ordenResponse = await axios.get(`http://localhost:8081/ordenes-produccion/consultar/${lote.idOp}`);
+      const ordenResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/ordenes-produccion/consultar/${lote.idOp}`);
       const sku = ordenResponse.data.sku;
       
       // Obtener BOM del producto
-      const bomResponse = await axios.get(`http://localhost:8081/bom/${sku}`);
+      const bomResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/bom/${sku}`);
       
       // Inicializar materiales con desperdicio en 0
       const materialesConDesperdicio = bomResponse.data.map(material => ({
@@ -151,7 +151,7 @@ const WorkStation = ({ user }) => {
 
   const loadWasteStats = async () => {
     try {
-      const response = await axios.get('http://localhost:8081/material-op/estadisticas-desperdicio');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/material-op/estadisticas-desperdicio`);
       setWasteStats(response.data.slice(0, 3)); // Top 3 motivos
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
@@ -169,7 +169,7 @@ const WorkStation = ({ user }) => {
     setLoading(true);
     
     try {
-      await axios.put(`http://localhost:8081/lotes/completar/${lote.idLote}?idOperario=${user.id}`);
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/lotes/completar/${lote.idLote}?idOperario=${user.id}`);
       alert(`✅ Lote completado y enviado a ${stageInfo.nextStageDisplay}`);
       await loadLotes();
     } catch (error) {
@@ -362,7 +362,7 @@ const WorkStation = ({ user }) => {
                 };
                 
                 console.log('Enviando desperdicios:', payload);
-                await axios.put('http://localhost:8081/material-op/registrar-desperdicios-lote', payload);
+                await axios.put(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/material-op/registrar-desperdicios-lote`, payload);
                 
                 alert("✅ Desperdicio registrado exitosamente");
                 setShowWasteForm(null);
