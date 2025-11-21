@@ -78,6 +78,8 @@ body {
     padding: 1rem 2rem;
     width: 100vw;
     min-width: 100vw;
+    position: relative; /* Permite posicionar el menú móvil (absolute) relativo a la barra */
+    z-index: 900; /* Asegura que el menú quede por encima del contenido */
 }
 
 .nav-menu {
@@ -1310,7 +1312,7 @@ button:hover {
         width: 100%;
         background-color: #10035cbd;
         padding: 1rem 0;
-        z-index: 100;
+        z-index: 950;
     }
     
     .nav-menu.active {

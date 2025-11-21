@@ -2,6 +2,7 @@
 .notification-bell {
   position: relative;
   display: inline-block;
+  z-index: 1100;
 }
 
 .bell-button {
@@ -184,7 +185,10 @@
 /* Responsive */
 @media (max-width: 768px) {
   .notification-dropdown {
-    width: 280px;
-    right: -20px;
+    /* En móviles ocupar la mayor parte posible sin salirse de la pantalla */
+    width: 90vw;
+    max-width: 320px;
+    right: 10px;
+    left: auto;
   }
 }

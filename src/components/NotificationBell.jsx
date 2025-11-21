@@ -1,16 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ProductionServiceAxios from '../services/productionServiceAxios';
 
 const NotificationBell = () => {
   const [alerts, setAlerts] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const bellRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     loadAlerts();
     const interval = setInterval(loadAlerts, 30000); // Actualizar cada 30 segundos
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!showDropdown) return;
+      if (bellRef.current && bellRef.current.contains(e.target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(e.target)) return;
+      setShowDropdown(false);
+    };
+
+    const handleResize = () => {
+      if (showDropdown) positionDropdown();
+    };
+
+    window.addEventListener('click', handleClickOutside);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [showDropdown]);
 
   const loadAlerts = async () => {
     setLoading(true);
@@ -37,7 +59,43 @@ const NotificationBell = () => {
   };
 
   const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
+    const newState = !showDropdown;
+    setShowDropdown(newState);
+    if (newState) {
+      // wait for DOM to render dropdown then position it
+      setTimeout(() => positionDropdown(), 0);
+    }
+  };
+
+  const positionDropdown = () => {
+    const btn = bellRef.current;
+    const dd = dropdownRef.current;
+    if (!btn || !dd) return;
+
+    // Reset any inline width to allow natural sizing first
+    dd.style.width = '';
+
+    const btnRect = btn.getBoundingClientRect();
+    const ddRect = dd.getBoundingClientRect();
+
+    // Determine dropdown width but cap it to viewport with some padding
+    const preferredWidth = Math.min(Math.max(ddRect.width, 200), 360);
+    const maxAllowed = window.innerWidth - 16; // 8px padding each side
+    const finalWidth = Math.min(preferredWidth, maxAllowed);
+
+    // Compute left so dropdown stays inside viewport
+    let left = btnRect.right - finalWidth;
+    if (left < 8) left = 8;
+    if (left + finalWidth > window.innerWidth - 8) left = window.innerWidth - finalWidth - 8;
+
+    const top = btnRect.bottom + 8;
+
+    dd.style.position = 'fixed';
+    dd.style.left = `${left}px`;
+    dd.style.top = `${top}px`;
+    dd.style.right = 'auto';
+    dd.style.width = `${finalWidth}px`;
+    dd.style.zIndex = 1100;
   };
 
   return (
@@ -45,6 +103,7 @@ const NotificationBell = () => {
       <button 
         className="bell-button"
         onClick={toggleDropdown}
+        ref={bellRef}
       >
         <i className="fas fa-bell"></i>
         {alerts.length > 0 && (
@@ -53,7 +112,7 @@ const NotificationBell = () => {
       </button>
 
       {showDropdown && (
-        <div className="notification-dropdown">
+        <div className="notification-dropdown" ref={dropdownRef}>
           <div className="notification-header">
             <h4>Alertas de Stock</h4>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
