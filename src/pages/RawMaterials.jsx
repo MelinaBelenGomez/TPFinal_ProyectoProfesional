@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import RawMaterialService from '../services/rawMaterialService';
 import ProductionServiceAxios from '../services/productionServiceAxios';
+import MapPicker from '../components/MapPicker';
 import '../styles/rawMaterials.css';
 
 const RawMaterials = () => {
@@ -14,6 +15,7 @@ const RawMaterials = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('nombre');
   const [centros, setCentros] = useState([]);
+  const [centerFilter, setCenterFilter] = useState('all');
   const [almacenes, setAlmacenes] = useState([]);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [stockData, setStockData] = useState({
@@ -37,6 +39,24 @@ const RawMaterials = () => {
     loadInfrastructure();
     loadAvailableProducts();
   }, []);
+
+  // Modal para ver ubicación de materia prima
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [mapModalCoords, setMapModalCoords] = useState(null);
+  const [mapModalTitle, setMapModalTitle] = useState('');
+
+  const openMap = (coords, title) => {
+    if (!coords || coords.lat == null || coords.lon == null) return;
+    setMapModalCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) });
+    setMapModalTitle(title || 'Ubicación');
+    setMapModalOpen(true);
+  };
+
+  const closeMap = () => {
+    setMapModalOpen(false);
+    setMapModalCoords(null);
+    setMapModalTitle('');
+  };
 
   const loadInfrastructure = async () => {
     const [centrosResponse, almacenesResponse] = await Promise.all([
@@ -179,6 +199,16 @@ const RawMaterials = () => {
             onChange={(e) => setSearchFilter(e.target.value)}
             style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minWidth: '200px' }}
           />
+          <select
+            value={centerFilter}
+            onChange={(e) => setCenterFilter(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          >
+            <option value="all">Todas las ubicaciones</option>
+            {centros.map(c => (
+              <option key={c.idCentro} value={c.idCentro}>{c.sucursal}</option>
+            ))}
+          </select>
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -343,13 +373,23 @@ const RawMaterials = () => {
       )}
 
       <div className="materials-grid">
-        {materials
+          {materials
           .filter(material => {
             const matchesSearch = material.nombre.toLowerCase().includes(searchFilter.toLowerCase()) ||
                                 material.codigo.toLowerCase().includes(searchFilter.toLowerCase());
             const matchesCategory = categoryFilter === 'all' || material.categoria === categoryFilter;
             const matchesStatus = statusFilter === 'all' || material.estado === statusFilter;
-            return matchesSearch && matchesCategory && matchesStatus;
+
+            // Filtrado por centro: si centerFilter != 'all', comprobar el centro del almacén
+            let matchesCenter = true;
+            if (centerFilter && centerFilter !== 'all') {
+              // obtener almacen del material
+              const almacen = almacenes.find(a => a.idAlmacen === material.idAlmacen);
+              const centroId = almacen ? almacen.idCentro : null;
+              matchesCenter = centroId && centroId.toString() === centerFilter.toString();
+            }
+
+            return matchesSearch && matchesCategory && matchesStatus && matchesCenter;
           })
           .sort((a, b) => {
             if (sortBy === 'stock_actual' || sortBy === 'precio_unitario') {
@@ -399,12 +439,30 @@ const RawMaterials = () => {
             </div>
 
             <div className="material-actions">
-              <button 
-                className="btn btn-danger btn-sm"
-                onClick={() => handleDeleteMaterial(material.id)}
-              >
-                <i className="fas fa-trash"></i> Eliminar
-              </button>
+              <div style={{display: 'flex', gap: '8px'}}>
+                <button 
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    // localizar centro del almacen
+                    const almacen = almacenes.find(a => a.idAlmacen === material.idAlmacen);
+                    const centro = almacen ? centros.find(c => c.idCentro === almacen.idCentro) : null;
+                    if (centro && centro.lat && centro.lon) {
+                      openMap({ lat: centro.lat, lon: centro.lon }, `${material.nombre} — ${centro.sucursal}`);
+                    } else {
+                      alert('Ubicación no disponible para esta materia prima');
+                    }
+                  }}
+                >
+                  <i className="fas fa-map-marker-alt"></i> Ver ubicación
+                </button>
+
+                <button 
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleDeleteMaterial(material.id)}
+                >
+                  <i className="fas fa-trash"></i> Eliminar
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -511,6 +569,26 @@ const RawMaterials = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {mapModalOpen && (
+        <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
+          <div style={{width: '90%', maxWidth: '900px', height: '70%', background: '#fff', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column'}}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+              <h3 style={{margin: 0}}>{mapModalTitle}</h3>
+              <button onClick={closeMap} style={{padding: '6px 10px'}}>Cerrar</button>
+            </div>
+            <div style={{flex: 1}}>
+              {mapModalCoords ? (
+                <div style={{height: '100%'}}>
+                  <MapPicker height="100%" initialLat={mapModalCoords.lat} initialLon={mapModalCoords.lon} selected={{lat: mapModalCoords.lat, lon: mapModalCoords.lon}} interactive={false} />
+                </div>
+              ) : (
+                <div>Coordenadas no disponibles</div>
+              )}
+            </div>
           </div>
         </div>
       )}
