@@ -110,7 +110,26 @@ const Infrastructure = () => {
     }
   };
 
+  // Modal para ver mapa
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [mapModalCoords, setMapModalCoords] = useState(null);
+  const [mapModalTitle, setMapModalTitle] = useState('');
+
+  const openMap = (coords, title) => {
+    if (!coords || coords.lat == null || coords.lon == null) return;
+    setMapModalCoords({ lat: parseFloat(coords.lat), lon: parseFloat(coords.lon) });
+    setMapModalTitle(title || 'Ubicación');
+    setMapModalOpen(true);
+  };
+
+  const closeMap = () => {
+    setMapModalOpen(false);
+    setMapModalCoords(null);
+    setMapModalTitle('');
+  };
+
   return (
+    <>
     <div className="infrastructure-container">
       <div className="header">
         <h2>Infraestructura</h2>
@@ -207,6 +226,7 @@ const Infrastructure = () => {
                     <th style={{ cursor: 'pointer' }}>ID</th>
                     <th style={{ cursor: 'pointer' }}>Sucursal</th>
                     <th style={{ cursor: 'pointer' }}>Descripción</th>
+                    <th style={{ cursor: 'pointer' }}>Mapa</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -218,6 +238,13 @@ const Infrastructure = () => {
                       <td>{centro.idCentro}</td>
                       <td>🏢 {centro.sucursal}</td>
                       <td>{centro.descripcion}</td>
+                      <td>
+                        {centro.lat && centro.lon ? (
+                          <button onClick={() => openMap({ lat: parseFloat(centro.lat), lon: parseFloat(centro.lon) }, centro.sucursal)}>Ver mapa</button>
+                        ) : (
+                          <span style={{color: '#888'}}>Sin ubicación</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -322,6 +349,7 @@ const Infrastructure = () => {
                   <th style={{ cursor: 'pointer' }}>Capacidad</th>
                   <th style={{ cursor: 'pointer' }}>Estado</th>
                   <th style={{ cursor: 'pointer' }}>Centro</th>
+                    <th style={{ cursor: 'pointer' }}>Mapa</th>
                 </tr>
               </thead>
               <tbody>
@@ -338,6 +366,15 @@ const Infrastructure = () => {
                     <td>{almacen.capacidad}</td>
                     <td><span style={{color: almacen.estado === 'ACTIVO' ? 'green' : 'red'}}>{almacen.estado}</span></td>
                     <td>🏢 {centros.find(c => c.idCentro === almacen.idCentro)?.sucursal || 'N/A'}</td>
+                    <td>
+                      {(() => {
+                        const centro = centros.find(c => c.idCentro === almacen.idCentro);
+                        if (centro && centro.lat && centro.lon) {
+                          return <button onClick={() => openMap({ lat: parseFloat(centro.lat), lon: parseFloat(centro.lon) }, centro.sucursal)}>Ver mapa</button>
+                        }
+                        return <span style={{color: '#888'}}>Sin ubicación</span>
+                      })()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -351,6 +388,24 @@ const Infrastructure = () => {
         </div>
       </div>
     </div>
+    {mapModalOpen && (
+      <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
+        <div style={{width: '90%', maxWidth: '900px', height: '70%', background: '#fff', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+            <h3 style={{margin: 0}}>{mapModalTitle}</h3>
+            <button onClick={closeMap} style={{padding: '6px 10px'}}>Cerrar</button>
+          </div>
+          <div style={{flex: 1}}>
+            {mapModalCoords ? (
+              <MapPicker initialLat={mapModalCoords.lat} initialLon={mapModalCoords.lon} selected={{lat: mapModalCoords.lat, lon: mapModalCoords.lon}} interactive={false} />
+            ) : (
+              <div>Coordenadas no disponibles</div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
