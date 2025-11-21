@@ -17,7 +17,7 @@ function ClickHandler({ onSelect }) {
   return null;
 }
 
-export default function MapPicker({ initialLat = -34.6, initialLon = -58.4, zoom = 12, selected, onSelect, interactive = true }) {
+export default function MapPicker({ initialLat = -34.6, initialLon = -58.4, zoom = 12, selected, onSelect, interactive = true, height = '300px' }) {
   const [position, setPosition] = useState(selected || (initialLat && initialLon ? { lat: initialLat, lon: initialLon } : null));
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function MapPicker({ initialLat = -34.6, initialLon = -58.4, zoom
   }, [selected]);
 
   return (
-    <MapContainer center={[initialLat, initialLon]} zoom={zoom} style={{ height: '100%', width: '100%' }}>
+    <MapContainer center={[initialLat, initialLon]} zoom={zoom} style={{ height: height, width: '100%' }}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

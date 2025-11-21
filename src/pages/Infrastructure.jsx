@@ -9,6 +9,7 @@ const Infrastructure = () => {
   const [newCentro, setNewCentro] = useState({ sucursal: '', descripcion: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [showMapPicker, setShowMapPicker] = useState(true);
   // include lat/lon in newCentro
   useEffect(() => {
     if (!newCentro.lat) setNewCentro(c => ({ ...c, lat: '' }));
@@ -179,7 +180,14 @@ const Infrastructure = () => {
           )}
 
           <div style={{marginBottom: '8px'}}>
-            <MapPicker initialLat={-34.6} initialLon={-58.4} selected={newCentro.lat && newCentro.lon ? {lat: parseFloat(newCentro.lat), lon: parseFloat(newCentro.lon)} : null} onSelect={(coords) => setNewCentro({...newCentro, lat: coords.lat, lon: coords.lon})} />
+            <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: '6px'}}>
+              <button type="button" onClick={() => setShowMapPicker(s => !s)} style={{padding: '6px 10px'}}>{showMapPicker ? 'Ocultar mapa' : 'Marcar en mapa'}</button>
+            </div>
+            {showMapPicker && (
+              <div style={{height: '300px'}}>
+                <MapPicker height="100%" initialLat={-34.6} initialLon={-58.4} selected={newCentro.lat && newCentro.lon ? {lat: parseFloat(newCentro.lat), lon: parseFloat(newCentro.lon)} : null} onSelect={(coords) => setNewCentro({...newCentro, lat: coords.lat, lon: coords.lon})} />
+              </div>
+            )}
           </div>
 
           <div style={{display: 'flex', gap: '8px', marginBottom: '12px'}}>
@@ -397,7 +405,9 @@ const Infrastructure = () => {
           </div>
           <div style={{flex: 1}}>
             {mapModalCoords ? (
-              <MapPicker initialLat={mapModalCoords.lat} initialLon={mapModalCoords.lon} selected={{lat: mapModalCoords.lat, lon: mapModalCoords.lon}} interactive={false} />
+              <div style={{height: '100%'}}>
+                <MapPicker height="100%" initialLat={mapModalCoords.lat} initialLon={mapModalCoords.lon} selected={{lat: mapModalCoords.lat, lon: mapModalCoords.lon}} interactive={false} />
+              </div>
             ) : (
               <div>Coordenadas no disponibles</div>
             )}
