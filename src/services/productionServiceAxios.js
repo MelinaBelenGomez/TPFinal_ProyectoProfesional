@@ -299,7 +299,9 @@ class ProductionServiceAxios {
     try {
       await axios.post(`${this.baseURL}/centros-produccion`, {
         sucursal: centroData.sucursal,
-        descripcion: centroData.descripcion
+        descripcion: centroData.descripcion,
+        lat: centroData.lat != null ? parseFloat(centroData.lat) : null,
+        lon: centroData.lon != null ? parseFloat(centroData.lon) : null
       });
       return {
         success: true,

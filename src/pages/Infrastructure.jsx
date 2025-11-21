@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import ProductionServiceAxios from '../services/productionServiceAxios';
+import MapPicker from '../components/MapPicker';
 
 const Infrastructure = () => {
   const [centros, setCentros] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newCentro, setNewCentro] = useState({ sucursal: '', descripcion: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  // include lat/lon in newCentro
+  useEffect(() => {
+    if (!newCentro.lat) setNewCentro(c => ({ ...c, lat: '' }));
+    if (!newCentro.lon) setNewCentro(c => ({ ...c, lon: '' }));
+  }, []);
   const [newAlmacen, setNewAlmacen] = useState({ nombre: '', capacidad: '', estado: 'ACTIVO', idCentro: '' });
   const [centroFilter, setCentroFilter] = useState('');
   const [almacenFilter, setAlmacenFilter] = useState('');
@@ -47,7 +55,14 @@ const Infrastructure = () => {
       return;
     }
 
-    const response = await ProductionServiceAxios.createCentro(newCentro);
+    // Convert lat/lon to numbers if present
+    const payload = {
+      ...newCentro,
+      lat: newCentro.lat !== '' && newCentro.lat !== null ? parseFloat(newCentro.lat) : null,
+      lon: newCentro.lon !== '' && newCentro.lon !== null ? parseFloat(newCentro.lon) : null
+    };
+
+    const response = await ProductionServiceAxios.createCentro(payload);
     if (response.success) {
       alert(response.message);
       setNewCentro({ sucursal: '', descripcion: '' });
@@ -55,6 +70,27 @@ const Infrastructure = () => {
     } else {
       alert(response.message);
     }
+  };
+
+  // Búsqueda simple usando Nominatim (OpenStreetMap)
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery || searchQuery.trim() === '') return;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      console.error('Error en búsqueda de direcciones', err);
+      setSearchResults([]);
+    }
+  };
+
+  const handleSelectSearch = (item) => {
+    setNewCentro({ ...newCentro, lat: item.lat, lon: item.lon });
+    setSearchResults([]);
+    setSearchQuery(item.display_name || `${item.lat}, ${item.lon}`);
   };
 
   const handleCreateAlmacen = async (e) => {
@@ -100,6 +136,49 @@ const Infrastructure = () => {
               placeholder="Descripción"
               value={newCentro.descripcion}
               onChange={(e) => setNewCentro({...newCentro, descripcion: e.target.value})}
+            />
+          </div>
+          <div style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+            <input
+              type="text"
+              placeholder="Buscar dirección..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{flex: 1}}
+            />
+            <button onClick={handleSearch} style={{padding: '6px 10px'}}>Buscar</button>
+          </div>
+          {searchResults.length > 0 && (
+            <div style={{maxHeight: '150px', overflowY: 'auto', background: '#fff', border: '1px solid #ddd', padding: '6px', marginBottom: '8px'}}>
+              {searchResults.map((r, idx) => (
+                <div key={idx} style={{padding: '6px', cursor: 'pointer'}} onClick={() => handleSelectSearch(r)}>
+                  <strong>{r.display_name}</strong>
+                  <div style={{fontSize: '12px', color: '#666'}}>{r.lat}, {r.lon}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{marginBottom: '8px'}}>
+            <MapPicker initialLat={-34.6} initialLon={-58.4} selected={newCentro.lat && newCentro.lon ? {lat: parseFloat(newCentro.lat), lon: parseFloat(newCentro.lon)} : null} onSelect={(coords) => setNewCentro({...newCentro, lat: coords.lat, lon: coords.lon})} />
+          </div>
+
+          <div style={{display: 'flex', gap: '8px', marginBottom: '12px'}}>
+            <input
+              type="number"
+              step="any"
+              placeholder="Latitud"
+              value={newCentro.lat}
+              onChange={(e) => setNewCentro({...newCentro, lat: e.target.value})}
+              style={{flex: 1}}
+            />
+            <input
+              type="number"
+              step="any"
+              placeholder="Longitud"
+              value={newCentro.lon}
+              onChange={(e) => setNewCentro({...newCentro, lon: e.target.value})}
+              style={{flex: 1}}
             />
           </div>
           <button type="submit">➕ Crear Centro</button>
