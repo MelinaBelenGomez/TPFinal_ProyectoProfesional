@@ -178,6 +178,13 @@ const Settings = () => {
     const response = await UserManagementService.createUser(newUser);
     if (response.success) {
       setUsers([...users, response.data]);
+      // Guardar credenciales creadas temporalmente en sessionStorage
+      try {
+        const passwordToUse = newUser.password && newUser.password.trim() !== '' ? newUser.password : 'frozen2025';
+        sessionStorage.setItem('lastCreatedUser', JSON.stringify({ username: response.data.username || newUser.username, password: passwordToUse }));
+      } catch (err) {
+        console.warn('No se pudo guardar credenciales en sessionStorage', err);
+      }
       setNewUser({
         username: '',
         email: '',
