@@ -10,7 +10,7 @@ import WorkStation from '../components/WorkStation';
 import Products from "../pages/Products";
 import RawMaterials from '../pages/RawMaterials';
 import Settings from '../pages/Settings';
-//import Clients from '../pages/Clients';
+import Traceability from '../pages/Traceability';
 import TestBackend from '../pages/TestBackend';
 import Infrastructure from '../pages/Infrastructure';
 
@@ -26,6 +26,7 @@ const AppRoutes = ({ user }) => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/user-management" element={<Settings />} />
         <Route path="/infrastructure" element={<Infrastructure />} />
+        <Route path="/traceability" element={<Traceability />} />
         <Route path="/test-backend" element={<TestBackend />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
