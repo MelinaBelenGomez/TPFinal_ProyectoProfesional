@@ -539,6 +539,32 @@ class ProductionServiceAxios {
       };
     }
   }
+
+
+  // =========================
+// MOVIMIENTO_STOCK
+// =========================
+static async getStockMovements() {
+  try {
+    const response = await axios.get(`${this.baseURL}/movimientos-stock`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, message: "Error al obtener movimientos" };
+  }
+}
+
+// =========================
+// MATERIAL_POR_OP
+// =========================
+static async getAssignedMaterials() {
+  try {
+    const response = await axios.get(`${this.baseURL}/material-por-op`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, message: "Error al obtener materiales por OP" };
+  }
+}
+
 }
 
 export default ProductionServiceAxios;
