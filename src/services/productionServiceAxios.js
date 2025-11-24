@@ -553,12 +553,12 @@ static async getStockMovements() {
   }
 }
 
-// =========================
-// MATERIAL_POR_OP
+/// ========================= 
+// MATERIAL_OP
 // =========================
 static async getAssignedMaterials() {
   try {
-    const response = await axios.get(`${this.baseURL}/material-por-op`);
+    const response = await axios.get(`${this.baseURL}/material-op`);
     return { success: true, data: response.data };
   } catch (error) {
     return { success: false, message: "Error al obtener materiales por OP" };

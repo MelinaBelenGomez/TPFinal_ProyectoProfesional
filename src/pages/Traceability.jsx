@@ -3,12 +3,10 @@ import ProductionServiceAxios from "../services/productionServiceAxios";
 import * as XLSX from "xlsx";
 
 const Traceability = () => {
-  // --- Datos desde backend ---
   const [movimientos, setMovimientos] = useState([]);
   const [materialAsignado, setMaterialAsignado] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // --- Estados para filtros ---
   const [filtros, setFiltros] = useState({
     sku: "",
     ordenProduccion: "",
@@ -17,9 +15,9 @@ const Traceability = () => {
     fechaHasta: "",
   });
 
-  // ----------------------
-  //    CARGA INICIAL
-  // ----------------------
+  // ======================================
+  //       CARGAR DATOS DEL BACKEND
+  // ======================================
   useEffect(() => {
     loadTraceabilityData();
   }, []);
@@ -29,6 +27,7 @@ const Traceability = () => {
     try {
       const mov = await ProductionServiceAxios.getStockMovements();
       const mat = await ProductionServiceAxios.getAssignedMaterials();
+
       setMovimientos(mov.data || []);
       setMaterialAsignado(mat.data || []);
     } catch (error) {
@@ -37,14 +36,29 @@ const Traceability = () => {
     setLoading(false);
   };
 
-  // ----------------------
-  //     EXPORTAR EXCEL
-  // ----------------------
+  // ======================================
+  //            EXPORTAR EXCEL
+  // ======================================
   const exportarExcel = () => {
     const wb = XLSX.utils.book_new();
 
-    const wsMov = XLSX.utils.json_to_sheet(movimientosFiltrados);
-    const wsMat = XLSX.utils.json_to_sheet(materialesFiltrados);
+    const wsMov = XLSX.utils.json_to_sheet(
+      movimientosFiltrados.map((m) => ({
+        Fecha: m.fecha,
+        SKU: m.sku,
+        Tipo: m.tipo_movimiento,
+        Cantidad: m.cantidad,
+      }))
+    );
+
+    const wsMat = XLSX.utils.json_to_sheet(
+      materialesFiltrados.map((m) => ({
+        Fecha_Reserva: m.fechaReserva,
+        OP: m.idOp,
+        SKU: m.sku,
+        Cantidad_Reservada: m.cantidadReservada,
+      }))
+    );
 
     XLSX.utils.book_append_sheet(wb, wsMov, "Movimientos");
     XLSX.utils.book_append_sheet(wb, wsMat, "Materiales");
@@ -52,9 +66,9 @@ const Traceability = () => {
     XLSX.writeFile(wb, "trazabilidad.xlsx");
   };
 
-  // ----------------------
-  //     FILTROS
-  // ----------------------
+  // ======================================
+  //              FILTROS
+  // ======================================
   const movimientosFiltrados = movimientos.filter((m) => {
     const f = filtros;
 
@@ -90,20 +104,23 @@ const Traceability = () => {
     const f = filtros;
 
     const cumpleSku =
-      !f.sku ||
-      m.sku?.toLowerCase().includes(f.sku.toLowerCase());
+      !f.sku || m.sku?.toLowerCase().includes(f.sku.toLowerCase());
 
     const cumpleOP =
       !f.ordenProduccion ||
-      String(m.ordenProduccion || "")
+      String(m.idOp || "")
         .toLowerCase()
         .includes(f.ordenProduccion.toLowerCase());
 
+    const fechaReserva = m.fechaReserva ? new Date(m.fechaReserva) : null;
+
     const cumpleFechaDesde =
-      !f.fechaDesde || new Date(m.fecha) >= new Date(f.fechaDesde);
+      !f.fechaDesde ||
+      (fechaReserva && fechaReserva >= new Date(f.fechaDesde));
 
     const cumpleFechaHasta =
-      !f.fechaHasta || new Date(m.fecha) <= new Date(f.fechaHasta);
+      !f.fechaHasta ||
+      (fechaReserva && fechaReserva <= new Date(f.fechaHasta));
 
     return cumpleSku && cumpleOP && cumpleFechaDesde && cumpleFechaHasta;
   });
@@ -118,9 +135,9 @@ const Traceability = () => {
     });
   };
 
-  // ----------------------
-  //     RENDER
-  // ----------------------
+  // ======================================
+  //                RENDER
+  // ======================================
   return (
     <div className="traceability-container">
       <div className="header">
@@ -128,7 +145,7 @@ const Traceability = () => {
         <p>Consulta de movimientos de stock y materiales asignados</p>
       </div>
 
-      {/* BOTÓN EXPORTAR EXCEL */}
+      {/* EXPORTAR */}
       <div style={{ marginTop: "15px", marginBottom: "20px" }}>
         <button
           onClick={exportarExcel}
@@ -144,11 +161,8 @@ const Traceability = () => {
         </button>
       </div>
 
-      {/* --- FILTROS --- */}
-      <div
-        className="card"
-        style={{ marginTop: "10px", padding: "20px", background: "#f8f9fa" }}
-      >
+      {/* FILTROS */}
+      <div className="card" style={{ marginTop: "10px", padding: "20px", background: "#f8f9fa" }}>
         <h3>🔍 Filtros</h3>
 
         <div
@@ -159,7 +173,6 @@ const Traceability = () => {
             marginTop: "15px",
           }}
         >
-          {/* SKU */}
           <div>
             <label>SKU</label>
             <input
@@ -168,11 +181,10 @@ const Traceability = () => {
               onChange={(e) =>
                 setFiltros({ ...filtros, sku: e.target.value })
               }
-              placeholder="Ej: MP-FRUTILLA-001"
+              placeholder="Ej: FRUTILLA1"
             />
           </div>
 
-          {/* Orden de producción */}
           <div>
             <label>Orden de Producción (OP)</label>
             <input
@@ -181,11 +193,10 @@ const Traceability = () => {
               onChange={(e) =>
                 setFiltros({ ...filtros, ordenProduccion: e.target.value })
               }
-              placeholder="Ej: 1203"
+              placeholder="Ej: 2"
             />
           </div>
 
-          {/* Tipo de movimiento */}
           <div>
             <label>Tipo de Movimiento</label>
             <select
@@ -201,7 +212,6 @@ const Traceability = () => {
             </select>
           </div>
 
-          {/* Fecha desde */}
           <div>
             <label>Fecha Desde</label>
             <input
@@ -213,7 +223,6 @@ const Traceability = () => {
             />
           </div>
 
-          {/* Fecha hasta */}
           <div>
             <label>Fecha Hasta</label>
             <input
@@ -251,6 +260,7 @@ const Traceability = () => {
           }}
         >
           <h3>📦 Movimientos de Stock ({movimientosFiltrados.length})</h3>
+
           <button
             onClick={loadTraceabilityData}
             style={{
@@ -280,22 +290,43 @@ const Traceability = () => {
               </tr>
             </thead>
             <tbody>
-  {movimientosFiltrados.map((m, i) => (
-    <tr key={i}>
-      <td>{m.fecha}</td>
-      <td>{m.sku}</td>
-      <td>{m.tipoMovimiento}</td>
-      <td>{m.cantidad}</td>
-    </tr>
-  ))}
-</tbody>
+              {movimientosFiltrados.map((m, i) => (
+                <tr key={i}>
+                  <td>{m.fecha}</td>
+                  <td>{m.sku}</td>
+                  <td>{m.tipo_movimiento}</td>
+                  <td>{m.cantidad}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         )}
       </div>
 
       {/* TABLA MATERIAL ASIGNADO */}
       <div className="card" style={{ marginTop: "25px" }}>
-        <h3>🧱 Material Asignado a OP ({materialesFiltrados.length})</h3>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "15px",
+          }}
+        >
+          <h3>🧱 Material Asignado a OP ({materialesFiltrados.length})</h3>
+
+          <button
+            onClick={loadTraceabilityData}
+            style={{
+              padding: "8px 15px",
+              background: "#17a2b8",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+            }}
+          >
+            🔄 Recargar
+          </button>
+        </div>
 
         {loading ? (
           <p>Cargando...</p>
@@ -305,19 +336,19 @@ const Traceability = () => {
           <table className="tabla">
             <thead>
               <tr>
-                <th>Fecha</th>
+                <th>Fecha Reserva</th>
                 <th>OP</th>
-                <th>SKU Material</th>
-                <th>Cantidad</th>
+                <th>SKU</th>
+                <th>Cantidad Reservada</th>
               </tr>
             </thead>
             <tbody>
               {materialesFiltrados.map((m, i) => (
                 <tr key={i}>
-                  <td>{m.fecha}</td>
-                  <td>{m.ordenProduccion}</td>
+                  <td>{m.fechaReserva}</td>
+                  <td>{m.idOp}</td>
                   <td>{m.sku}</td>
-                  <td>{m.cantidad}</td>
+                  <td>{m.cantidadReservada}</td>
                 </tr>
               ))}
             </tbody>
