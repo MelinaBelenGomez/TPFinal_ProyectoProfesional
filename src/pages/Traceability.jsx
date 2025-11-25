@@ -15,9 +15,6 @@ const Traceability = () => {
     fechaHasta: "",
   });
 
-  // ======================================
-  //       CARGAR DATOS DEL BACKEND
-  // ======================================
   useEffect(() => {
     loadTraceabilityData();
   }, []);
@@ -37,9 +34,9 @@ const Traceability = () => {
   };
 
   // ======================================
-  //            EXPORTAR EXCEL
+  //  EXPORTAR EXCEL (solo movimientos)
   // ======================================
-  const exportarExcel = () => {
+  const exportarMovimientos = () => {
     const wb = XLSX.utils.book_new();
 
     const wsMov = XLSX.utils.json_to_sheet(
@@ -51,6 +48,17 @@ const Traceability = () => {
       }))
     );
 
+    XLSX.utils.book_append_sheet(wb, wsMov, "Movimientos");
+
+    XLSX.writeFile(wb, "movimientos_stock.xlsx");
+  };
+
+  // ======================================
+  //  EXPORTAR EXCEL (solo materiales OP)
+  // ======================================
+  const exportarMateriales = () => {
+    const wb = XLSX.utils.book_new();
+
     const wsMat = XLSX.utils.json_to_sheet(
       materialesFiltrados.map((m) => ({
         Fecha_Reserva: m.fechaReserva,
@@ -60,10 +68,9 @@ const Traceability = () => {
       }))
     );
 
-    XLSX.utils.book_append_sheet(wb, wsMov, "Movimientos");
-    XLSX.utils.book_append_sheet(wb, wsMat, "Materiales");
+    XLSX.utils.book_append_sheet(wb, wsMat, "Materiales OP");
 
-    XLSX.writeFile(wb, "trazabilidad.xlsx");
+    XLSX.writeFile(wb, "materiales_op.xlsx");
   };
 
   // ======================================
@@ -143,22 +150,6 @@ const Traceability = () => {
       <div className="header">
         <h2>📌 Trazabilidad</h2>
         <p>Consulta de movimientos de stock y materiales asignados</p>
-      </div>
-
-      {/* EXPORTAR */}
-      <div style={{ marginTop: "15px", marginBottom: "20px" }}>
-        <button
-          onClick={exportarExcel}
-          style={{
-            padding: "8px 15px",
-            background: "#28a745",
-            color: "white",
-            borderRadius: "5px",
-            border: "none",
-          }}
-        >
-          📄 Exportar Excel
-        </button>
       </div>
 
       {/* FILTROS */}
@@ -257,22 +248,38 @@ const Traceability = () => {
             display: "flex",
             justifyContent: "space-between",
             marginBottom: "15px",
+            alignItems: "center",
           }}
         >
           <h3>📦 Movimientos de Stock ({movimientosFiltrados.length})</h3>
 
-          <button
-            onClick={loadTraceabilityData}
-            style={{
-              padding: "8px 15px",
-              background: "#17a2b8",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-            }}
-          >
-            🔄 Recargar
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={loadTraceabilityData}
+              style={{
+                padding: "8px 15px",
+                background: "#17a2b8",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+              }}
+            >
+              🔄 Recargar
+            </button>
+
+            <button
+              onClick={exportarMovimientos}
+              style={{
+                padding: "8px 15px",
+                background: "#28a745",
+                color: "white",
+                borderRadius: "5px",
+                border: "none",
+              }}
+            >
+              📄 Excel
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -310,22 +317,38 @@ const Traceability = () => {
             display: "flex",
             justifyContent: "space-between",
             marginBottom: "15px",
+            alignItems: "center",
           }}
         >
           <h3>🧱 Material Asignado a OP ({materialesFiltrados.length})</h3>
 
-          <button
-            onClick={loadTraceabilityData}
-            style={{
-              padding: "8px 15px",
-              background: "#17a2b8",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-            }}
-          >
-            🔄 Recargar
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={loadTraceabilityData}
+              style={{
+                padding: "8px 15px",
+                background: "#17a2b8",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+              }}
+            >
+              🔄 Recargar
+            </button>
+
+            <button
+              onClick={exportarMateriales}
+              style={{
+                padding: "8px 15px",
+                background: "#28a745",
+                color: "white",
+                borderRadius: "5px",
+                border: "none",
+              }}
+            >
+              📄 Excel
+            </button>
+          </div>
         </div>
 
         {loading ? (
