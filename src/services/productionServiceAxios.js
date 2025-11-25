@@ -124,7 +124,22 @@ class ProductionServiceAxios {
       };
     }
   }
-
+  // get productos
+static async getProductos() {
+  try {
+    const response = await axios.get(`${this.baseURL}/productos`);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Error al obtener productos:', error);
+    return {
+      success: false,
+      message: 'Error al obtener productos'
+    };
+  }
+}
   // CONECTADO AL BACKEND: Obtener productos de materia prima (no MIX)
   static async getProductosMateriaPrima() {
     try {
@@ -444,6 +459,46 @@ class ProductionServiceAxios {
       return {
         success: false,
         message: 'Error al incrementar stock'
+      };
+    }
+  }
+
+  // CONECTADO AL BACKEND: Obtener sector asignado a un stock (opcional, para resaltar en la grilla)
+  static async getSectorForStock(sku, idAlmacen) {
+    try {
+      const response = await axios.get(`${this.baseURL}/stock/sector`, {
+        params: { sku, idAlmacen }
+      });
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Error al obtener sector del stock:', error);
+      return {
+        success: false,
+        message: 'Error al obtener sector del stock'
+      };
+    }
+  }
+
+  // CONECTADO AL BACKEND: Asignar o reasignar sector a un stock en un almacén
+  static async asignarSectorStock(sku, idAlmacen, idSector) {
+    try {
+      await axios.post(`${this.baseURL}/stock/asignar-sector`, {
+        sku,
+        idAlmacen,
+        idSector
+      });
+      return {
+        success: true,
+        message: 'Sector asignado correctamente'
+      };
+    } catch (error) {
+      console.error('Error al asignar sector:', error);
+      return {
+        success: false,
+        message: 'Error al asignar sector'
       };
     }
   }

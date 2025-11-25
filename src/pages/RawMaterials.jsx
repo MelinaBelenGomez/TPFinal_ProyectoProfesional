@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import RawMaterialService from '../services/rawMaterialService';
 import ProductionServiceAxios from '../services/productionServiceAxios';
 import MapPicker from '../components/MapPicker';
+import AlmacenSectorGrid from '../components/almacen/AlmacenSectorGrid';
 import '../styles/rawMaterials.css';
 
 const RawMaterials = () => {
@@ -40,10 +41,19 @@ const RawMaterials = () => {
     loadAvailableProducts();
   }, []);
 
-  // Modal para ver ubicación de materia prima
+  // Modal para ver ubicación de materia prima (mapa geográfico)
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [mapModalCoords, setMapModalCoords] = useState(null);
   const [mapModalTitle, setMapModalTitle] = useState('');
+
+  // Modal para ver y reasignar sector en el almacén
+  const [sectorModalOpen, setSectorModalOpen] = useState(false);
+  const [sectorModalMaterial, setSectorModalMaterial] = useState(null);
+
+  // Modal para ver plano general de un almacén (todos los sectores y productos)
+  const [almacenPlanoModalOpen, setAlmacenPlanoModalOpen] = useState(false);
+  const [almacenPlanoSeleccionado, setAlmacenPlanoSeleccionado] = useState('');
+  const [almacenPlanoFiltro, setAlmacenPlanoFiltro] = useState('');
 
   const openMap = (coords, title) => {
     if (!coords || coords.lat == null || coords.lon == null) return;
@@ -186,6 +196,19 @@ const RawMaterials = () => {
             disabled={materials.length === 0}
           >
             <i className="fas fa-warehouse"></i> Incrementar Stock
+          </button>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => {
+              // si hay al menos un almacén, preseleccionar el primero
+              if (almacenes.length > 0 && !almacenPlanoSeleccionado) {
+                setAlmacenPlanoSeleccionado(String(almacenes[0].idAlmacen));
+              }
+              setAlmacenPlanoModalOpen(true);
+            }}
+            disabled={almacenes.length === 0}
+          >
+            <i className="fas fa-th"></i> Plano de almacén
           </button>
         </div>
       </div>
@@ -372,6 +395,127 @@ const RawMaterials = () => {
         </div>
       )}
 
+      {/* Modal de vista general de un almacén: plano completo de sectores */}
+      {almacenPlanoModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '1100px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header">
+              <h3>
+                Plano de sectores del almacén
+              </h3>
+              <button 
+                className="btn-close"
+                onClick={() => {
+                  setAlmacenPlanoModalOpen(false);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ flex: 2, minWidth: 0 }}>
+                <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label><strong>Almacén:</strong></label>
+                  <select
+                    value={almacenPlanoSeleccionado}
+                    onChange={(e) => setAlmacenPlanoSeleccionado(e.target.value)}
+                    style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  >
+                    <option value="">Seleccionar almacén...</option>
+                    {almacenes.map(a => {
+                      const centro = centros.find(c => c.idCentro === a.idCentro);
+                      return (
+                        <option key={a.idAlmacen} value={a.idAlmacen}>
+                          {a.nombre} {centro ? `- ${centro.sucursal}` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {almacenPlanoSeleccionado ? (
+                  <AlmacenSectorGrid
+                    almacenId={parseInt(almacenPlanoSeleccionado, 10)}
+                    sku={null}
+                    onSectorAssigned={() => {
+                      // si se reasignan sectores desde la vista general, recargamos materias
+                      loadMaterials();
+                    }}
+                  />
+                ) : (
+                  <p style={{ color: '#666' }}>Seleccione un almacén para ver su plano de sectores.</p>
+                )}
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #eee', paddingLeft: '12px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '8px' }}>Lista de materias por sector</h4>
+                <input
+                  type="text"
+                  placeholder="Filtrar por SKU o nombre..."
+                  value={almacenPlanoFiltro}
+                  onChange={(e) => setAlmacenPlanoFiltro(e.target.value)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: '4px', border: '1px solid #ddd', marginBottom: '8px' }}
+                />
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', fontSize: '0.85rem' }}>
+                  {materials
+                    .filter(m => {
+                      if (!almacenPlanoSeleccionado) return false;
+                      if (String(m.idAlmacen) !== String(almacenPlanoSeleccionado)) return false;
+                      const term = almacenPlanoFiltro.toLowerCase();
+                      if (!term) return true;
+                      return (
+                        m.nombre.toLowerCase().includes(term) ||
+                        m.codigo.toLowerCase().includes(term)
+                      );
+                    })
+                    .map(m => (
+                      <div key={m.id} style={{ padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
+                        <div><strong>{m.nombre}</strong> ({m.codigo})</div>
+                        <div style={{ color: '#666' }}>Stock: {m.stock_disponible} {m.unidad}</div>
+                      </div>
+                    ))}
+                  {materials.filter(m => String(m.idAlmacen) === String(almacenPlanoSeleccionado)).length === 0 && (
+                    <p style={{ color: '#999' }}>No hay materias primas en este almacén.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para ver / reasignar sector en el almacén */}
+      {sectorModalOpen && sectorModalMaterial && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '1000px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header">
+              <h3>
+                Sectores del almacén para {sectorModalMaterial.nombre} ({sectorModalMaterial.codigo})
+              </h3>
+              <button 
+                className="btn-close"
+                onClick={() => {
+                  setSectorModalOpen(false);
+                  setSectorModalMaterial(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <AlmacenSectorGrid
+                almacenId={sectorModalMaterial.idAlmacen}
+                sku={sectorModalMaterial.codigo}
+                onSectorAssigned={() => {
+                  // después de reasignar, recargamos materias para reflejar cambios
+                  loadMaterials();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="materials-grid">
           {materials
           .filter(material => {
@@ -454,6 +598,16 @@ const RawMaterials = () => {
                   }}
                 >
                   <i className="fas fa-map-marker-alt"></i> Ver ubicación
+                </button>
+
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setSectorModalMaterial(material);
+                    setSectorModalOpen(true);
+                  }}
+                >
+                  <i className="fas fa-th-large"></i> Ver / reasignar sector
                 </button>
 
                 <button 

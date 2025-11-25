@@ -1,0 +1,186 @@
+.sector-grid-container {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.section-divider {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.sector-grid-wrapper {
+  margin-top: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.sector-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.sector-item {
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: #fafafa;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  min-height: 90px;
+}
+
+.sector-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  border-color: #1890ff;
+}
+
+.sector-item-current {
+  border: 3px solid #fa541c;
+  background: #fff2e8;
+  box-shadow: 0 0 10px rgba(250, 84, 28, 0.6);
+  position: relative;
+}
+
+/* Colores por tipo de sector (puedes ajustar según tus tipos reales) */
+.sector-tipo-fruta {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.sector-tipo-hortaliza {
+  background: #fff7e6;
+  border-color: #ffd591;
+}
+
+.sector-tipo-mixto {
+  background: #f9f0ff;
+  border-color: #d3adf7;
+}
+
+.sector-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.sector-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.sector-tipo {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  color: #555;
+}
+
+.sector-card-content {
+  flex: 1;
+}
+
+.sector-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.sector-condicion {
+  color: #666;
+}
+
+.sector-producto {
+  font-size: 0.8rem;
+}
+
+.sector-stock {
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.sector-actual {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #096dd9;
+}
+
+.sector-vacio {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 6px 0;
+}
+
+/* Lista resumen debajo del plano */
+.sector-list {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.sector-list h4 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+.sector-list-item {
+  padding: 6px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.sector-list-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sector-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.sector-list-title {
+  font-weight: 500;
+}
+
+.sector-list-sub {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Spinner simple para no depender de antd */
+.asg-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid #f0f0f0;
+  border-top-color: #1890ff;
+  animation: asg-spin 0.8s linear infinite;
+  margin: 0 auto 8px;
+}
+
+.asg-spinner-small {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+@keyframes asg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
