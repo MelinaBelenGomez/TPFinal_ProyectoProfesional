@@ -17,19 +17,7 @@ import Infrastructure from '../pages/Infrastructure';
 const AppRoutes = ({ user }) => {
   if (user?.rol === 'ADMIN') {
     return (
-      <Routes><div className="sector-hover-info">
-  <strong>{sector.nombre}</strong><br/>
-  Tipo: {sector.tipoProducto || 'N/A'}<br/>
-  Condición: {sector.condicion || 'N/A'}<br/>
-  {sector.skuProducto ? (
-    <>
-      SKU: {sector.skuProducto}<br/>
-      Stock: {sector.stockDisponible || 0}
-    </>
-  ) : (
-    <em>Vacío</em>
-  )}
-</div>
+      <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/production" element={<Production user={user} />} />
