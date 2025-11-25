@@ -155,12 +155,24 @@ const RawMaterials = () => {
     }
   };
 
-  const handleUpdateStock = async (materialId, newStock) => {
-    // Por ahora deshabilitado - necesitaría implementar endpoint de actualización
-    alert('⚠️ Función no disponible. Use "Agregar Stock" para incrementar.');
-    setEditingStock(null);
-  };
+const handleOnlyIncreaseStock = async (e) => {
+  e.preventDefault();
 
+  const response = await ProductionServiceAxios.incrementarStock(
+    stockData.sku,
+    stockData.idAlmacen,
+    parseInt(stockData.cantidad)
+  );
+
+  if (response.success) {
+    alert("✅ Stock incrementado exitosamente");
+    setStockData({ sku: '', idAlmacen: '', cantidad: '' });
+    setShowStockForm(false);
+    loadMaterials();
+  } else {
+    alert("❌ Error al incrementar stock: " + response.message);
+  }
+};
   const handleDeleteMaterial = async (materialId) => {
     // Por ahora deshabilitado - necesitaría implementar endpoint de eliminación
     alert('⚠️ Función no disponible desde el backend.');
@@ -647,7 +659,7 @@ const RawMaterials = () => {
                 ×
               </button>
             </div>
-            <form onSubmit={handleAddStock}>
+            <form onSubmit={handleOnlyIncreaseStock}>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Materia Prima (SKU):</label>
@@ -675,7 +687,7 @@ const RawMaterials = () => {
                   <label>Almacén:</label>
                   <select
                     value={stockData.idAlmacen}
-                    onChange={(e) => setStockData({...stockData, idAlmacen: e.target.value})}
+                    onChange={(e) => setStockData({...stockData, idAlmacen: parseInt(e.target.value)})}
                     required
                     disabled={!stockData.sku}
                   >
