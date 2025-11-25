@@ -43,7 +43,7 @@ const Traceability = () => {
       movimientosFiltrados.map((m) => ({
         Fecha: m.fecha,
         SKU: m.sku,
-        Tipo: m.tipo_movimiento,
+        Tipo: m.tipo_movimiento || m.tipoMovimiento || m.tipo,
         Cantidad: m.cantidad,
       }))
     );
@@ -301,7 +301,7 @@ const Traceability = () => {
                 <tr key={i}>
                   <td>{m.fecha}</td>
                   <td>{m.sku}</td>
-                  <td>{m.tipo_movimiento}</td>
+                  <td>{m.tipo_movimiento || m.tipoMovimiento || m.tipo}</td>
                   <td>{m.cantidad}</td>
                 </tr>
               ))}
