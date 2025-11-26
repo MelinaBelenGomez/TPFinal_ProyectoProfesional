@@ -643,7 +643,6 @@ const Products = () => {
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Nombre</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Descripción</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Unidad</th>
-                    <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Categoría</th>
                     <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Tipo</th>
                     <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #dee2e6' }}>Acciones</th>
                   </tr>
@@ -662,18 +661,6 @@ const Products = () => {
                       <td style={{ padding: '12px' }}>{p.nombre}</td>
                       <td style={{ padding: '12px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.descripcion}</td>
                       <td style={{ padding: '12px' }}>{p.unidadMedida}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span style={{
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          background: p.idCategoria === 1 ? '#d4edda' : '#e2e3e5',
-                          color: p.idCategoria === 1 ? '#155724' : '#383d41'
-                        }}>
-                          {getNombreCategoria(p.idCategoria)}
-                        </span>
-                      </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{
                           padding: '4px 8px',
