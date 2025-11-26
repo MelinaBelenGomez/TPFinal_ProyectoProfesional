@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import ProductionServiceAxios from "../services/productionServiceAxios";
 import * as XLSX from "xlsx";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, Legend,
+  PieChart, Pie, Cell, BarChart, Bar
+} from "recharts";
 
 const Traceability = () => {
+  const [mostrarLeyenda, setMostrarLeyenda] = useState(false);
   const [movimientos, setMovimientos] = useState([]);
   const [materialAsignado, setMaterialAsignado] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +77,7 @@ const Traceability = () => {
 
     XLSX.writeFile(wb, "materiales_op.xlsx");
   };
-
+  
   // ======================================
   //              FILTROS
   // ======================================
@@ -106,7 +111,7 @@ const Traceability = () => {
       cumpleFechaHasta
     );
   });
-
+  
   const materialesFiltrados = materialAsignado.filter((m) => {
     const f = filtros;
 
@@ -141,6 +146,69 @@ const Traceability = () => {
       fechaHasta: "",
     });
   };
+  // ======================================
+//      DATOS PARA GRÁFICOS
+// ======================================
+
+// Movimientos por fecha
+const movimientosPorFecha = Object.values(
+  movimientosFiltrados.reduce((acc, m) => {
+    const fecha = m.fecha;
+
+    if (!acc[fecha]) {
+      acc[fecha] = { fecha, ingreso: 0, liberacion: 0 };
+    }
+
+    const tipoReal = (m.tipo_movimiento || m.tipoMovimiento || m.tipo || "")
+      .toString()
+      .trim()
+      .toUpperCase(); // 👈 clave
+
+    if (tipoReal === "INGRESO") {
+      acc[fecha].ingreso += Number(m.cantidad || 0);
+    }
+
+    if (tipoReal === "LIBERACION") {
+      acc[fecha].liberacion += Number(m.cantidad || 0);
+    }
+
+    return acc;
+  }, {})
+);
+
+
+
+// ================================
+//   DATOS PARA GRÁFICO TORTA (OP)
+// ================================
+const materialesPorOP = Object.entries(
+  materialesFiltrados.reduce((acc, m) => {
+    acc[m.sku] = (acc[m.sku] || 0) + m.cantidadReservada;
+    return acc;
+  }, {})
+).map(([sku, cantidad]) => ({
+  name: sku,
+  value: cantidad
+}));
+
+// Generador de color aleatorio
+const generarColor = () =>
+  "#" + Math.floor(Math.random() * 16777215).toString(16);
+
+// Colores dinámicos (uno por material)
+const coloresTorta = materialesPorOP.map(() => generarColor());
+
+
+// Materiales más movidos ✅ ARREGLADO
+const materialesMasMovidos = Object.entries(
+  movimientosFiltrados.reduce((acc, m) => {
+    acc[m.sku] = (acc[m.sku] || 0) + m.cantidad;
+    return acc;
+  }, {})
+)
+  .map(([key, value]) => ({ sku: key, cantidad: value }))
+  .sort((a, b) => b.cantidad - a.cantidad)
+  .slice(0, 5);
 
   // ======================================
   //                RENDER
@@ -240,6 +308,97 @@ const Traceability = () => {
           🧹 Limpiar filtros
         </button>
       </div>
+          <div className="card" style={{ marginTop: "25px" }}>
+  <h3>📊 Estadísticas de Stock</h3>
+
+  <div style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+    gap: "30px",
+    marginTop: "20px"
+  }}>
+
+    {/* INGRESOS VS EGRESOS */}
+    <div>
+      <h4>Ingresos vs Egresos</h4>
+<LineChart width={320} height={250} data={movimientosPorFecha}>
+  <XAxis dataKey="fecha" />
+  <YAxis />
+  <Tooltip />
+  <Legend />
+  <Line type="monotone" dataKey="ingreso" name="Ingreso" />
+  <Line type="monotone" dataKey="liberacion" name="Liberación" />
+</LineChart>
+
+    </div>
+
+    {/* grafico torta */}
+  <div>
+  <h4>Materiales más usados en OP</h4>
+
+<button
+  onClick={() => setMostrarLeyenda(!mostrarLeyenda)}
+  style={{
+    marginBottom: "10px",
+    padding: "6px 12px",
+    borderRadius: "6px",
+    border: "none",
+    background: "#6c757d",
+    color: "white",
+    cursor: "pointer"
+  }}
+>
+  {mostrarLeyenda ? "Ocultar" : "Mostrar"} leyenda
+</button>
+  {mostrarLeyenda && (
+  <div style={{ marginTop: "10px" }}>
+    {materialesPorOP.map((m, i) => (
+      <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+        <div style={{
+          width: "14px",
+          height: "14px",
+          backgroundColor: coloresTorta[i],
+          borderRadius: "4px"
+        }} />
+        <span>{m.name}</span>
+      </div>
+    ))}
+  </div>
+)}
+
+
+<PieChart width={320} height={250}>
+  <Pie
+    data={materialesPorOP}
+    dataKey="value"
+    nameKey="name"
+    cx="50%"
+    cy="50%"
+    outerRadius={90}
+  >
+    {materialesPorOP.map((entry, index) => (
+      <Cell key={index} fill={coloresTorta[index]} />
+    ))}
+  </Pie>
+
+  <Tooltip />
+</PieChart>
+
+</div>
+
+    {/* MATERIALES MÁS MOVIDOS */}
+    <div>
+      <h4>Materiales Más Movidos</h4>
+      <BarChart width={320} height={250} data={materialesMasMovidos}>
+        <XAxis dataKey="sku" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="cantidad" fill="#007bff" />
+      </BarChart>
+    </div>
+
+  </div>
+</div>
 
       {/* TABLA MOVIMIENTOS */}
       <div className="card" style={{ marginTop: "25px" }}>
