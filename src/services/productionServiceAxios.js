@@ -35,6 +35,27 @@ class ProductionServiceAxios {
       };
     }
   }
+static async eliminarMaterial(sku, idAlmacen) {
+  try {
+    await axios.delete(`${this.baseURL}/stock/eliminar`, {
+      params: {
+        sku: sku,
+        idAlmacen: idAlmacen
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Producto eliminado del stock'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Error al eliminar producto del stock'
+    };
+  }
+}
+
 
   // CONECTADO AL BACKEND: Crear producto
   static async createProduct(productData) {
@@ -443,6 +464,7 @@ static async getProductos() {
     }
   }
 
+  
   // CONECTADO AL BACKEND: Incrementar stock
   static async incrementarStock(sku, idAlmacen, cantidad) {
     try {

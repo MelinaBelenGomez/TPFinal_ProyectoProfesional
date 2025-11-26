@@ -173,10 +173,25 @@ const handleOnlyIncreaseStock = async (e) => {
     alert("❌ Error al incrementar stock: " + response.message);
   }
 };
-  const handleDeleteMaterial = async (materialId) => {
-    // Por ahora deshabilitado - necesitaría implementar endpoint de eliminación
-    alert('⚠️ Función no disponible desde el backend.');
-  };
+const handleDeleteMaterial = async (materialId) => {
+  const material = materials.find(m => m.id === materialId);
+  if (!material) return;
+
+  if (!window.confirm(`¿Eliminar ${material.nombre} del almacén?`)) return;
+
+  const response = await ProductionServiceAxios.eliminarMaterial(
+    material.codigo,
+    material.idAlmacen
+  );
+
+  if (response.success) {
+    alert('✅ Material eliminado correctamente');
+    loadMaterials();
+  } else {
+    alert('❌ No se pudo eliminar el material');
+  }
+};
+
 
   const getStatusColor = (estado) => {
     return estado === 'DISPONIBLE' ? '#28a745' : '#dc3545';
