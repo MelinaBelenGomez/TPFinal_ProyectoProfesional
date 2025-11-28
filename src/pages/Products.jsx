@@ -99,6 +99,18 @@ const Products = () => {
     return !skuExists;
   };
 
+  const manejarCategoria = (valor) => {
+  setCategoria(valor);
+
+  if (valor === "Materia Prima") {
+    setUnidadMedida("gramos");
+  }
+
+  if (valor === "Producto Final") {
+    setUnidadMedida("unidades");
+  }
+};
+
   // --- Función que se ejecuta al enviar el formulario ---
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -323,40 +335,24 @@ const Products = () => {
 
         <div className="form-group">
           <label>Categoría</label>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              style={{ flex: 1 }}
-            >
-              <option value="">-- Seleccionar categoría --</option>
-              {categorias.map((cat, index) => (
-                <option key={index} value={cat}>{cat}</option>
-              ))}
-            </select>
-            <button 
-              type="button" 
-              onClick={() => setShowCategoryForm(!showCategoryForm)}
-              style={{ padding: '8px 12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
-            >
-              ➕ Nueva
-            </button>
-          </div>
+<select
+  value={categoria}
+  onChange={(e) => manejarCategoria(e.target.value)}
+>
+  <option value="">-- Seleccionar categoría --</option>
+  <option value="Materia Prima">Materia Prima</option>
+  <option value="Producto Final">Producto Final</option>
+</select>
+
         </div>
 
         <div className="form-group">
           <label>Unidad de medida</label>
-          <select
-            value={unidadMedida}
-            onChange={(e) => setUnidadMedida(e.target.value)}
-          >
-            <option value="">-- Seleccionar unidad de medida --</option>
-            <option value="gramos">Gramos (g)</option>
-            <option value="kilogramos">Kilogramos (kg)</option>
-            <option value="litros">Litros (L)</option>
-            <option value="unidades">Unidades</option>
-            <option value="cajas">Cajas</option>
-          </select>
+<select value={unidadMedida} disabled>
+  <option value="gramos">Gramos (g)</option>
+  <option value="unidades">Unidades</option>
+</select>
+
         </div>
 
         {/* Sección BOM - Solo para Productos Finales */}
@@ -566,21 +562,6 @@ const Products = () => {
                 onChange={(e) => setFiltros({...filtros, busqueda: e.target.value})}
                 style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
               />
-            </div>
-
-            {/* Filtro por categoría */}
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>Categoría</label>
-              <select
-                value={filtros.categoria}
-                onChange={(e) => setFiltros({...filtros, categoria: e.target.value})}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
-              >
-                <option value="">Todas las categorías</option>
-                {categoriasDeProductos.map((cat, index) => (
-                  <option key={index} value={cat}>{cat}</option>
-                ))}
-              </select>
             </div>
 
             {/* Filtro por unidad de medida */}
